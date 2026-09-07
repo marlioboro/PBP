@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,30 +8,36 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
     <header class="site-header">
         <div class="container">
             <a href="#profile" class="brand">Ammar</a>
-            <nav>
+            <nav aria-label="Primary navigation">
                 <a href="#profile">Profile</a>
+                <a href="#skills">Skills</a>
+                <a href="#experience">Experience</a>
             </nav>
         </div>
     </header>
 
     <main>
-        <section class="hero" id="profile">
+        <section class="hero" id="profile" aria-labelledby="profile-heading">
             <div class="container hero-grid">
-                <div class="hero-identity">
+                <header class="hero-identity">
                     <p class="hero-kicker">Computer Science &middot; Universitas Indonesia</p>
-                    <h1>Ammar</h1>
-                </div>
-                <div class="hero-photo">
-                    <div class="photo-block"></div>
-                    <img class="avatar" src="/static/img/black-cat-portfolio.jpg" alt="Photo of Ammar">
-                </div>
-                <div class="hero-details">
+                    <h1 id="profile-heading">Ammar</h1>
+                </header>
+                <figure class="hero-photo">
+                    <div class="photo-block" aria-hidden="true"></div>
+                    <img
+                        class="avatar"
+                        src="{% static 'img/black-cat-portfolio.jpg' %}"
+                        alt="Black cat used as Ammar's profile picture"
+                    >
+                </figure>
+                <article class="hero-details">
                     <p class="bio">
                         Computer Science student at Universitas Indonesia who is building a personal portfolio
                         while learning Django, HTML5, and CSS3 through PBP, because they told me to.
@@ -45,12 +52,70 @@
                             <dd>S1 Ilmu Komputer</dd>
                         </div>
                     </dl>
-                    <div class="social-links">
-                        <a href="https://github.com/marlioboro" class="social-link">GitHub</a>
-                        <a href="https://www.linkedin.com/in/farelammar/" class="social-link">LinkedIn</a>
-                        <a href="https://marlioboro.itch.io/" class="social-link">itch.io</a>
-                    </div>
-                </div>
+                    <nav class="social-links" aria-label="Social profiles">
+                        <a href="https://github.com/marlioboro" class="social-link" rel="me">GitHub</a>
+                        <a href="https://www.linkedin.com/in/farelammar/" class="social-link" rel="me">LinkedIn</a>
+                        <a href="https://marlioboro.itch.io/" class="social-link" rel="me">itch.io</a>
+                    </nav>
+                </article>
+            </div>
+        </section>
+
+        <section class="portfolio-section skills-section" id="skills" aria-labelledby="skills-heading">
+            <div class="container">
+                <header class="section-heading">
+                    <p class="section-kicker">What I work with</p>
+                    <h2 id="skills-heading">Skills</h2>
+                </header>
+                <ul class="card-grid skill-list">
+                    <li class="skill-card">
+                        <p class="card-number" aria-hidden="true">01</p>
+                        <h3>Python, Java &amp; SQL</h3>
+                        <p>Programming and query languages used across coursework and technical projects.</p>
+                    </li>
+                    <li class="skill-card">
+                        <p class="card-number" aria-hidden="true">02</p>
+                        <h3>Unity &amp; Godot</h3>
+                        <p>Game engines used to explore game development and turn gameplay ideas into prototypes.</p>
+                    </li>
+                    <li class="skill-card">
+                        <p class="card-number" aria-hidden="true">03</p>
+                        <h3>Computer Vision</h3>
+                        <p>Hands-on image classification experience, including waste recognition for Sortify AI.</p>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="portfolio-section experience-section" id="experience" aria-labelledby="experience-heading">
+            <div class="container">
+                <header class="section-heading">
+                    <p class="section-kicker">Learning by building</p>
+                    <h2 id="experience-heading">Experience</h2>
+                </header>
+                <ol class="experience-list">
+                    <li class="experience-item">
+                        <article>
+                            <p class="experience-meta">Hackathon Project &middot; Computer Vision</p>
+                            <h3>Sortify AI</h3>
+                            <p>Developed the waste-classification component and contributed to a web app that directs users to nearby disposal locations.</p>
+                        </article>
+                    </li>
+                    <li class="experience-item">
+                        <article>
+                            <p class="experience-meta">Current Member &middot; Expected Completion 2027</p>
+                            <h3>RISTEK Fasilkom UI</h3>
+                            <p>Active member of the Game Development Special Interest Group.</p>
+                        </article>
+                    </li>
+                    <li class="experience-item">
+                        <article>
+                            <p class="experience-meta">Expected Graduation 2029 &middot; GPA 3.85/4.00</p>
+                            <h3>Universitas Indonesia</h3>
+                            <p>Pursuing a bachelor's degree in Computer Science with an interest in data and computer vision.</p>
+                        </article>
+                    </li>
+                </ol>
             </div>
         </section>
     </main>
