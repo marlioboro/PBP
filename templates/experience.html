@@ -1,59 +1,49 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Experience - {{ name }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
-    <header class="site-header">
-        <div class="container">
-            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
-            <nav aria-label="Primary navigation">
-                <a href="{% url 'main:show_main' %}">Profile</a>
-                <a href="{% url 'main:show_main' %}#skills">Skills</a>
-                <a href="{% url 'main:show_experience' %}" aria-current="page">Experience</a>
-            </nav>
-        </div>
-    </header>
+{% extends 'base.html' %}
 
-    <main>
-        <section class="portfolio-section experience-section experience-page" aria-labelledby="experience-heading">
-            <div class="container">
-                <header class="section-heading">
-                    <p class="section-kicker">Learning by building</p>
-                    <h1 id="experience-heading">Experience</h1>
-                </header>
+{% block title %}Experience — {{ name }}{% endblock %}
 
-                <div class="experience-grid">
-                    {% for experience in experience_list %}
-                        <article class="experience-card">
-                            <p class="experience-category">{{ experience.get_category_display }}</p>
-                            <h2>{{ experience.title }}</h2>
-                            <p class="experience-description">{{ experience.description }}</p>
-                            {% if experience.is_ongoing %}
-                                <p class="experience-status">Sedang berlangsung</p>
-                            {% else %}
-                                <p class="experience-status">Selesai</p>
-                            {% endif %}
-                        </article>
-                    {% empty %}
-                        <p class="empty-state">Belum ada pengalaman yang ditambahkan.</p>
-                    {% endfor %}
-                </div>
+{% block body_class %}experience-page{% endblock %}
+
+{% block content %}
+    <section class="page-hero">
+        <div class="container page-hero-grid">
+            <div>
+                <p class="section-label">// JOURNEY.LOG</p>
+                <h1>Experience</h1>
             </div>
-        </section>
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+            <p>Learning in public, building with teams, and turning every project into the next starting point.</p>
         </div>
-    </footer>
-</body>
-</html>
+    </section>
+
+    <section class="timeline-section section-space" aria-labelledby="experience-list-heading">
+        <div class="container">
+            <h2 class="visually-hidden" id="experience-list-heading">Experience list</h2>
+            <ol class="timeline-list">
+                {% for experience in experience_list %}
+                    <li class="timeline-item">
+                        <article>
+                            <div class="timeline-marker" aria-hidden="true"><span></span></div>
+                            <div class="timeline-meta">
+                                <p>{{ experience.get_category_display }}</p>
+                                {% if experience.is_ongoing %}
+                                    <span class="status-chip status-live"><i></i> Sedang berlangsung</span>
+                                {% else %}
+                                    <span class="status-chip">Selesai</span>
+                                {% endif %}
+                            </div>
+                            <div class="timeline-content">
+                                <h3>{{ experience.title }}</h3>
+                                <p>{{ experience.description }}</p>
+                            </div>
+                        </article>
+                    </li>
+                {% empty %}
+                    <li class="empty-state">
+                        <span aria-hidden="true">[ ]</span>
+                        <p>Belum ada pengalaman yang ditambahkan.</p>
+                    </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </section>
+{% endblock %}

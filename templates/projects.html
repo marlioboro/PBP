@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Projects — {{ name }}{% endblock %}
+
+{% block body_class %}projects-page{% endblock %}
+
+{% block content %}
+    <section class="page-hero projects-hero">
+        <div class="container page-hero-grid">
+            <div>
+                <p class="section-label">// QUEST_ARCHIVE.DB</p>
+                <h1>Quest<br><span>archive.</span></h1>
+            </div>
+            <div class="projects-summary">
+                <p>Games, data experiments, and technical quests—loaded directly from the Django database.</p>
+                <dl>
+                    <div><dt>{{ project_count|stringformat:"02d" }}</dt><dd>Total</dd></div>
+                    <div><dt>{{ released_count|stringformat:"02d" }}</dt><dd>Released</dd></div>
+                    <div><dt>{{ featured_count|stringformat:"02d" }}</dt><dd>Featured</dd></div>
+                </dl>
+            </div>
+        </div>
+    </section>
+
+    <section class="projects-section section-space" aria-labelledby="project-list-heading">
+        <div class="container">
+            <div class="archive-heading">
+                <h2 id="project-list-heading">All projects</h2>
+                <p>SELECT * FROM projects;</p>
+            </div>
+
+            <div class="project-grid">
+                {% for project in project_list %}
+                    <article class="project-card{% if project.featured %} is-featured{% endif %}">
+                        <a class="project-cover" href="{% url 'main:show_project_detail' project.slug %}" aria-label="View {{ project.title }} details">
+                            {% if project.thumbnail_url %}
+                                <img src="{{ project.thumbnail_url }}" alt="Cover art for {{ project.title }}">
+                            {% else %}
+                                <div class="project-placeholder" aria-hidden="true">
+                                    <span>&lt;/&gt;</span>
+                                    <small>NO_COVER.PNG</small>
+                                </div>
+                            {% endif %}
+                            <span class="project-status">{{ project.get_status_display }}</span>
+                            {% if project.featured %}<span class="featured-flag">Featured</span>{% endif %}
+                        </a>
+
+                        <div class="project-card-body">
+                            <p class="project-category">{{ project.get_category_display }} · {{ project.role }}</p>
+                            <h3><a href="{% url 'main:show_project_detail' project.slug %}">{{ project.title }}</a></h3>
+                            <p>{{ project.summary }}</p>
+                            <ul class="tag-list" aria-label="Technologies used">
+                                {% for technology in project.technology_list %}
+                                    <li>{{ technology }}</li>
+                                {% endfor %}
+                            </ul>
+                            <a class="project-link" href="{% url 'main:show_project_detail' project.slug %}">
+                                Read case file <span aria-hidden="true">→</span>
+                            </a>
+                        </div>
+                    </article>
+                {% empty %}
+                    <div class="empty-state project-empty">
+                        <span aria-hidden="true">[ ]</span>
+                        <p>Belum ada proyek yang ditambahkan.</p>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <p class="archive-source">
+                Full playable archive available on
+                <a href="https://marlioboro.itch.io/" target="_blank" rel="noopener noreferrer">marlioboro.itch.io ↗</a>
+            </p>
+        </div>
+    </section>
+{% endblock %}

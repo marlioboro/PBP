@@ -1,95 +1,154 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ name }} - Portfolio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
-    <header class="site-header">
-        <div class="container">
-            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
-            <nav aria-label="Primary navigation">
-                <a href="{% url 'main:show_main' %}">Profile</a>
-                <a href="{% url 'main:show_main' %}#skills">Skills</a>
-                <a href="{% url 'main:show_experience' %}">Experience</a>
-            </nav>
-        </div>
-    </header>
 
-    <main>
-        <section class="hero" id="profile" aria-labelledby="profile-heading">
-            <div class="container hero-grid">
-                <header class="hero-identity">
-                    <p class="hero-kicker">Computer Science &middot; Universitas Indonesia</p>
-                    <h1 id="profile-heading">{{ name }}</h1>
-                </header>
-                <figure class="hero-photo">
-                    <div class="photo-block" aria-hidden="true"></div>
+{% block title %}{{ name }} — Game Developer & Builder{% endblock %}
+
+{% block content %}
+    <section class="hero-section" aria-labelledby="hero-heading">
+        <div class="hero-parallax" data-parallax aria-hidden="true">
+            <div class="parallax-layer parallax-layer-back">
+                <span class="pixel-celestial pixel-sun"></span>
+                <span class="pixel-celestial pixel-moon"></span>
+                <span class="profile-cloud profile-cloud-one"></span>
+                <span class="profile-cloud profile-cloud-two"></span>
+            </div>
+            <div class="parallax-layer parallax-layer-mid">
+                <span class="profile-cloud profile-cloud-three"></span>
+                <span class="pixel-spark pixel-spark-one">+</span>
+                <span class="pixel-spark pixel-spark-two">◆</span>
+            </div>
+            <div class="parallax-layer parallax-layer-front">
+                <span class="pixel-hill pixel-hill-one"></span>
+                <span class="pixel-hill pixel-hill-two"></span>
+            </div>
+        </div>
+        <div class="container hero-layout">
+            <div class="hero-copy">
+                <p class="eyebrow"><span class="status-dot"></span> Open to curious problems</p>
+                <h1 id="hero-heading">
+                    I make games.<br>
+                    <span>Chase flags.</span><br>
+                    Argue with data.
+                </h1>
+                <p class="hero-intro">{{ bio }}</p>
+
+                <div class="hero-actions">
+                    <a class="button button-primary" href="{% url 'main:show_projects' %}">
+                        Explore projects <span aria-hidden="true">→</span>
+                    </a>
+                    <a class="button button-ghost" href="https://marlioboro.itch.io/" target="_blank" rel="noopener noreferrer">
+                        Play on itch.io <span aria-hidden="true">↗</span>
+                    </a>
+                </div>
+
+                <dl class="hero-stats" aria-label="Portfolio overview">
+                    <div>
+                        <dt>{{ project_count|stringformat:"02d" }}</dt>
+                        <dd>Projects indexed</dd>
+                    </div>
+                    <div>
+                        <dt>03</dt>
+                        <dd>Focus lanes</dd>
+                    </div>
+                    <div>
+                        <dt>∞</dt>
+                        <dd>Curiosity loop</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <figure class="profile-visual">
+                <div class="visual-window">
+                    <div class="window-bar" aria-hidden="true">
+                        <span></span><span></span><span></span>
+                        <p>player_01.png</p>
+                    </div>
                     <img
-                        class="avatar"
-                        src="{% static 'img/profile-photo.jpg' %}"
+                        src="{% static 'img/profile-photo.jpg' %}?v=20260914-2"
                         alt="Photo of {{ name }}"
                     >
-                </figure>
-                <article class="hero-details">
-                    <p class="bio">{{ bio }}</p>
-                    <dl class="meta-list">
-                        <div class="meta-row">
-                            <dt>NPM</dt>
-                            <dd>{{ npm }}</dd>
-                        </div>
-                        <div class="meta-row">
-                            <dt>Program</dt>
-                            <dd>{{ study_program }}</dd>
-                        </div>
-                    </dl>
-                    <nav class="social-links" aria-label="Social profiles">
-                        <a href="https://github.com/marlioboro" class="social-link" rel="me">GitHub</a>
-                        <a href="https://www.linkedin.com/in/farelammar/" class="social-link" rel="me">LinkedIn</a>
-                        <a href="https://marlioboro.itch.io/" class="social-link" rel="me">itch.io</a>
-                    </nav>
+                    <figcaption>
+                        <span>PLAYER</span>
+                        <strong>{{ name }}</strong>
+                    </figcaption>
+                </div>
+                <div class="visual-badge visual-badge-top" aria-hidden="true">LVL. 01</div>
+                <div class="visual-badge visual-badge-bottom">
+                    <span class="status-dot"></span> READY_TO_BUILD
+                </div>
+            </figure>
+        </div>
+    </section>
+
+    <section class="focus-section section-space" id="focus" aria-labelledby="focus-heading">
+        <div class="container">
+            <header class="section-header split-heading">
+                <div>
+                    <p class="section-label">// CURRENT QUESTS</p>
+                    <h2 id="focus-heading">Three ways I explore.</h2>
+                </div>
+                <p>I like problems that combine systems thinking, experimentation, and a satisfying moment of discovery.</p>
+            </header>
+
+            <div class="focus-grid">
+                <article class="focus-card focus-card-game">
+                    <p class="focus-index">01 / PLAY</p>
+                    <div class="focus-icon" aria-hidden="true">◆</div>
+                    <h3>Game Development</h3>
+                    <p>Turning mechanics into compact, playable experiences with Godot and Unity.</p>
+                    <ul class="tag-list" aria-label="Game development interests">
+                        <li>Gameplay</li><li>Systems</li><li>Prototyping</li>
+                    </ul>
+                </article>
+
+                <article class="focus-card focus-card-security">
+                    <p class="focus-index">02 / PWN</p>
+                    <div class="focus-icon" aria-hidden="true">⌁</div>
+                    <h3>CTF & Security</h3>
+                    <p>Learning to inspect systems from unexpected angles and question every assumption.</p>
+                    <ul class="tag-list" aria-label="Cybersecurity interests">
+                        <li>CTF</li><li>Problem Solving</li><li>Security</li>
+                    </ul>
+                </article>
+
+                <article class="focus-card focus-card-data">
+                    <p class="focus-index">03 / DATA</p>
+                    <div class="focus-icon" aria-hidden="true">▦</div>
+                    <h3>Data & AI</h3>
+                    <p>Exploring patterns with Python, SQL, and computer vision to create useful decisions.</p>
+                    <ul class="tag-list" aria-label="Data interests">
+                        <li>Python</li><li>SQL</li><li>Computer Vision</li>
+                    </ul>
                 </article>
             </div>
-        </section>
-
-        <section class="portfolio-section skills-section" id="skills" aria-labelledby="skills-heading">
-            <div class="container">
-                <header class="section-heading">
-                    <p class="section-kicker">What I work with</p>
-                    <h2 id="skills-heading">Skills</h2>
-                </header>
-                <ul class="card-grid skill-list">
-                    <li class="skill-card">
-                        <p class="card-number" aria-hidden="true">01</p>
-                        <h3>Python, Java &amp; SQL</h3>
-                        <p>Programming and query languages used across coursework and technical projects.</p>
-                    </li>
-                    <li class="skill-card">
-                        <p class="card-number" aria-hidden="true">02</p>
-                        <h3>Unity &amp; Godot</h3>
-                        <p>Game engines used to explore game development and turn gameplay ideas into prototypes.</p>
-                    </li>
-                    <li class="skill-card">
-                        <p class="card-number" aria-hidden="true">03</p>
-                        <h3>Computer Vision</h3>
-                        <p>Hands-on image classification experience, including waste recognition for Sortify AI.</p>
-                    </li>
-                </ul>
-            </div>
-        </section>
-
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>
-    </footer>
-</body>
-</html>
+    </section>
+
+    <section class="toolbox-section section-space" id="skills" aria-labelledby="toolbox-heading">
+        <div class="container toolbox-layout">
+            <header class="section-header">
+                <p class="section-label">// LOADOUT</p>
+                <h2 id="toolbox-heading">Tools in rotation.</h2>
+            </header>
+
+            <div class="toolbox-list">
+                <article>
+                    <span>01</span>
+                    <h3>Languages</h3>
+                    <p>Python · Java · SQL</p>
+                </article>
+                <article>
+                    <span>02</span>
+                    <h3>Engines</h3>
+                    <p>Godot · Unity</p>
+                </article>
+                <article>
+                    <span>03</span>
+                    <h3>Exploring</h3>
+                    <p>CTF · Computer Vision · Data</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+{% endblock %}

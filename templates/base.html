@@ -1,0 +1,106 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-theme-preference="system">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Portfolio of {{ name }}, a game developer and CTF and data enthusiast.">
+    <title>{% block title %}{{ name }} — Portfolio{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script>
+        (function () {
+            var preference = localStorage.getItem('portfolio-theme') || 'system';
+            var resolved = preference === 'system'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : preference;
+            document.documentElement.dataset.theme = resolved;
+            document.documentElement.dataset.themePreference = preference;
+        }());
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&amp;family=Pixelify+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/theme.js' %}" defer></script>
+    <script src="{% static 'js/parallax.js' %}" defer></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="page-grid" aria-hidden="true"></div>
+
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="{% url 'main:show_main' %}" class="brand" aria-label="{{ name }} — home">
+                <span class="brand-mark">MA</span>
+                <span class="brand-copy">
+                    <strong>{{ name }}</strong>
+                    <small>developer.log</small>
+                </span>
+            </a>
+
+            <div class="header-controls">
+                <nav class="primary-nav" aria-label="Primary navigation">
+                    <a
+                        href="{% url 'main:show_main' %}"
+                        class="nav-link{% if active_page == 'profile' %} is-active{% endif %}"
+                        {% if active_page == 'profile' %}aria-current="page"{% endif %}
+                    >Profile</a>
+                    <a
+                        href="{% url 'main:show_projects' %}"
+                        class="nav-link{% if active_page == 'projects' %} is-active{% endif %}"
+                        {% if active_page == 'projects' %}aria-current="page"{% endif %}
+                    >Projects</a>
+                    <a
+                        href="{% url 'main:show_experience' %}"
+                        class="nav-link{% if active_page == 'experience' %} is-active{% endif %}"
+                        {% if active_page == 'experience' %}aria-current="page"{% endif %}
+                    >Experience</a>
+                </nav>
+
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Theme: System">
+                    <span class="theme-toggle-icon" aria-hidden="true">SYS</span>
+                    <span class="theme-toggle-label">System</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <section class="runner-stage" aria-hidden="true">
+        <div class="runner-hud">
+            <span>HP ■■■</span>
+            <span>XP +07</span>
+            <span>AUTOSAVE: ON</span>
+        </div>
+        <span class="runner-cloud runner-cloud-one"></span>
+        <span class="runner-cloud runner-cloud-two"></span>
+        <span class="runner-collectible runner-collectible-one">◆</span>
+        <span class="runner-collectible runner-collectible-two">+</span>
+        <div class="runner-avatar">
+            <div class="pixel-dino">
+                <span class="dino-tail"></span>
+                <span class="dino-body"></span>
+                <span class="dino-head"><i></i></span>
+                <span class="dino-leg dino-leg-front"></span>
+                <span class="dino-leg dino-leg-back"></span>
+            </div>
+        </div>
+        <div class="runner-ground"></div>
+    </section>
+
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <div>
+                <p class="footer-title">{{ name }}</p>
+                <p>Game development · CTF · Data</p>
+            </div>
+            <a href="https://marlioboro.itch.io/" target="_blank" rel="noopener noreferrer">
+                itch.io <span aria-hidden="true">↗</span>
+            </a>
+            <p class="footer-meta">© 2026 · Built with Django</p>
+        </div>
+    </footer>
+</body>
+</html>

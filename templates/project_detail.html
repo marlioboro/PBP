@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ project.title }} — {{ name }}{% endblock %}
+
+{% block body_class %}project-detail-page{% endblock %}
+
+{% block content %}
+    <article class="project-detail section-space">
+        <div class="container">
+            <a class="back-link" href="{% url 'main:show_projects' %}"><span aria-hidden="true">←</span> Back to archive</a>
+
+            <header class="project-detail-header">
+                <div>
+                    <p class="section-label">// CASE_FILE / {{ project.slug }}</p>
+                    <h1>{{ project.title }}</h1>
+                    <p class="project-detail-summary">{{ project.summary }}</p>
+                </div>
+                {% if project.project_url %}
+                    <a class="button button-primary" href="{{ project.project_url }}" target="_blank" rel="noopener noreferrer">
+                        {% if project.category == 'game' %}Play on itch.io{% else %}Visit project{% endif %}
+                        <span aria-hidden="true">↗</span>
+                    </a>
+                {% endif %}
+            </header>
+
+            <div class="project-detail-layout">
+                <figure class="project-detail-cover">
+                    {% if project.thumbnail_url %}
+                        <img src="{{ project.thumbnail_url }}" alt="Cover art for {{ project.title }}">
+                    {% else %}
+                        <div class="project-placeholder project-placeholder-large" aria-hidden="true">
+                            <span>&lt;/&gt;</span>
+                            <small>BUILD_PREVIEW_UNAVAILABLE</small>
+                        </div>
+                    {% endif %}
+                </figure>
+
+                <aside class="project-specs" aria-label="Project information">
+                    <dl>
+                        <div><dt>Category</dt><dd>{{ project.get_category_display }}</dd></div>
+                        <div><dt>Status</dt><dd>{{ project.get_status_display }}</dd></div>
+                        <div><dt>Role</dt><dd>{{ project.role }}</dd></div>
+                    </dl>
+
+                    <div class="stack-block">
+                        <p>Stack & tags</p>
+                        <ul class="tag-list">
+                            {% for technology in project.technology_list %}
+                                <li>{{ technology }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </article>
+{% endblock %}
