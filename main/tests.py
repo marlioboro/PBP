@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -143,6 +144,48 @@ class ProjectTest(TestCase):
             response,
             f'href="{reverse("main:show_projects")}"',
         )
+
+    def test_create_form_requires_staff(self):
+        url = reverse('main:create_project')
+        self.assertEqual(self.client.get(url).status_code, 302)
+        self.assertEqual(self.client.post(url, {}).status_code, 302)
+
+    def test_staff_can_create_project_with_unique_slug(self):
+        user = get_user_model().objects.create_user(
+            username='portfolio-admin', password='test-password', is_staff=True
+        )
+        self.client.force_login(user)
+        url = reverse('main:create_project')
+        self.assertContains(self.client.get(url), 'Save project')
+        payload = {
+            'title': self.project.title,
+            'summary': 'A second project with the same title.',
+            'category': 'game',
+            'status': 'released',
+            'role': 'Game Developer',
+            'technologies': 'Godot, Python',
+            'project_url': 'https://example.com/game',
+            'thumbnail_url': '',
+            'featured': 'on',
+        }
+
+        response = self.client.post(url, payload)
+
+        self.assertRedirects(response, reverse('main:show_projects'))
+        self.assertTrue(Project.objects.filter(slug='cipher-quest-2').exists())
+        self.assertEqual(Project.objects.count(), 2)
+
+    def test_create_form_rejects_invalid_project(self):
+        user = get_user_model().objects.create_user(
+            username='portfolio-admin', password='test-password', is_staff=True
+        )
+        self.client.force_login(user)
+
+        response = self.client.post(reverse('main:create_project'), {'title': ''})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'This field is required.')
+        self.assertEqual(Project.objects.count(), 1)
 
 
 class CuratedPortfolioDataTest(TestCase):

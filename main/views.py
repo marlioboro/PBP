@@ -1,5 +1,9 @@
-from django.shortcuts import get_object_or_404, render
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.text import slugify
 
+from main.forms import ProjectForm
 from main.models import Experience, Project
 
 
@@ -54,3 +58,26 @@ def show_project_detail(request, slug):
         project=project,
     )
     return render(request, 'project_detail.html', context)
+
+
+@staff_member_required
+def create_project(request):
+    form = ProjectForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        project = form.save(commit=False)
+        base_slug = slugify(project.title) or 'project'
+        slug = base_slug
+        suffix = 2
+        while Project.objects.filter(slug=slug).exists():
+            slug = f'{base_slug}-{suffix}'
+            suffix += 1
+        project.slug = slug
+        project.save()
+        messages.success(request, f'Project "{project.title}" berhasil ditambahkan.')
+        return redirect('main:show_projects')
+
+    context = build_context(
+        active_page='projects',
+        form=form,
+    )
+    return render(request, 'projects_form.html', context)

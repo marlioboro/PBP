@@ -65,6 +65,13 @@
     </header>
 
     <main id="main-content">
+        {% if messages %}
+            <div class="container site-messages" role="status">
+                {% for message in messages %}
+                    <p class="site-message">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 

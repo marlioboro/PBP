@@ -42,6 +42,8 @@ PWS_HOST = os.getenv('PWS_HOST', '').strip()
 if PWS_HOST:
     ALLOWED_HOSTS.append(PWS_HOST)
 
+CSRF_TRUSTED_ORIGINS = [f'https://{PWS_HOST}'] if PWS_HOST else []
+
 
 # Application definition
 

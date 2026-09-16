@@ -1213,6 +1213,102 @@ html[data-theme="dark"] .pixel-sun {
     color: var(--lime);
 }
 
+/* Project editor */
+.site-messages {
+    padding-top: 1rem;
+}
+
+.site-message {
+    padding: 0.9rem 1rem;
+    color: var(--text);
+    background: var(--lime-wash);
+    border: 2px solid var(--accent-border);
+    font-family: var(--mono);
+}
+
+.form-hero h1 {
+    font-size: clamp(3.3rem, 8vw, 6rem);
+}
+
+.form-hero h1 span {
+    color: var(--lime);
+}
+
+.form-hero p:last-child {
+    margin-top: 1.5rem;
+    color: var(--muted);
+}
+
+.form-layout {
+    max-width: 52rem;
+}
+
+.project-form {
+    display: grid;
+    gap: 1.4rem;
+    padding: clamp(1.2rem, 4vw, 2.5rem);
+    background: var(--surface);
+    border: 2px solid var(--line-strong);
+    box-shadow: var(--shadow);
+}
+
+.form-field {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.form-field label {
+    font-family: var(--pixel);
+    font-weight: 700;
+}
+
+.form-field label span,
+.field-errors,
+.form-errors {
+    color: var(--orange);
+}
+
+.form-field input:not([type="checkbox"]),
+.form-field select,
+.form-field textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 0.8rem 0.9rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    font: inherit;
+}
+
+.form-field textarea {
+    resize: vertical;
+}
+
+.form-field small {
+    color: var(--muted);
+}
+
+.form-field-checkbox {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.form-field-checkbox input {
+    order: -1;
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: var(--lime);
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 0.5rem;
+}
+
 /* Project detail */
 .project-detail {
     min-height: calc(100vh - 12rem);
