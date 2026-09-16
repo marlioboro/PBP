@@ -29,6 +29,17 @@
                 <a class="button button-ghost" href="{% url 'main:create_project' %}">+ Add project</a>
             </div>
 
+            <form class="project-search" method="get" action="{% url 'main:show_projects' %}" role="search">
+                <label for="project-title-search">Search project title</label>
+                <div class="project-search-controls">
+                    <input id="project-title-search" name="title" type="search" value="{{ title_query }}" placeholder="Try: Sortify" autocomplete="off">
+                    <button class="button button-primary" type="submit">Search</button>
+                    {% if title_query %}
+                        <a class="button button-ghost" href="{% url 'main:show_projects' %}">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+
             <div class="project-grid">
                 {% for project in project_list %}
                     <article class="project-card{% if project.featured %} is-featured{% endif %}">
@@ -62,7 +73,11 @@
                 {% empty %}
                     <div class="empty-state project-empty">
                         <span aria-hidden="true">[ ]</span>
-                        <p>Belum ada proyek yang ditambahkan.</p>
+                        {% if title_query %}
+                            <p>Tidak ada proyek dengan judul "{{ title_query }}".</p>
+                        {% else %}
+                            <p>Belum ada proyek yang ditambahkan.</p>
+                        {% endif %}
                     </div>
                 {% endfor %}
             </div>

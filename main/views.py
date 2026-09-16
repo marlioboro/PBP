@@ -1,5 +1,7 @@
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core import serializers
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import slugify
 
@@ -40,15 +42,35 @@ def show_experience(request):
 
 
 def show_projects(request):
-    projects = Project.objects.all()
+    # Tutorial 03 demonstrates the JSON delivery boundary even though this
+    # Django app could query the ORM directly for its own template.
+    projects = [
+        item.object
+        for item in serializers.deserialize(
+            'json', get_projects_json(request).content
+        )
+    ]
+    all_projects = Project.objects.all()
     context = build_context(
         active_page='projects',
         project_list=projects,
-        project_count=projects.count(),
-        released_count=projects.filter(status='released').count(),
-        featured_count=projects.filter(featured=True).count(),
+        project_count=all_projects.count(),
+        released_count=all_projects.filter(status='released').count(),
+        featured_count=all_projects.filter(featured=True).count(),
+        title_query=request.GET.get('title', '').strip(),
     )
     return render(request, 'projects.html', context)
+
+
+def get_projects_json(request):
+    projects = Project.objects.all()
+    title_query = request.GET.get('title', '').strip()
+    if title_query:
+        projects = projects.filter(title__icontains=title_query)
+    return HttpResponse(
+        serializers.serialize('json', projects),
+        content_type='application/json',
+    )
 
 
 def show_project_detail(request, slug):

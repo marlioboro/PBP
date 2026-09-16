@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -186,6 +188,37 @@ class ProjectTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'This field is required.')
         self.assertEqual(Project.objects.count(), 1)
+
+    def test_json_endpoint_returns_model_data(self):
+        response = self.client.get(reverse('main:get_projects_json'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response['Content-Type'].startswith('application/json'))
+        data = json.loads(response.content)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['pk'], str(self.project.id))
+        self.assertEqual(data[0]['fields']['title'], self.project.title)
+
+    def test_json_title_filter_is_case_insensitive(self):
+        response = self.client.get(
+            reverse('main:get_projects_json'), {'title': '  CIPHER  '}
+        )
+        missing = self.client.get(
+            reverse('main:get_projects_json'), {'title': 'missing'}
+        )
+
+        self.assertEqual(len(json.loads(response.content)), 1)
+        self.assertEqual(json.loads(missing.content), [])
+
+    def test_project_search_uses_json_results(self):
+        response = self.client.get(
+            reverse('main:show_projects'), {'title': 'missing'}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['project_list'], [])
+        self.assertContains(response, 'Tidak ada proyek dengan judul')
+        self.assertNotContains(response, self.project.summary)
 
 
 class CuratedPortfolioDataTest(TestCase):
