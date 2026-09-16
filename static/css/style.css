@@ -1230,6 +1230,71 @@ html[data-theme="dark"] .pixel-sun {
     margin-top: 1.6rem;
 }
 
+.project-card-actions {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.project-delete-trigger {
+    padding: 0.3rem 0;
+    color: var(--orange);
+    background: none;
+    border: 0;
+    font-family: var(--pixel);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.project-delete-trigger:hover {
+    text-decoration: underline;
+}
+
+.project-delete-modal {
+    width: min(90vw, 28rem);
+    max-height: min(90vh, 30rem);
+    margin: auto;
+    padding: 0;
+    color: var(--text);
+    background: var(--surface);
+    border: 2px solid var(--orange);
+    box-shadow: var(--shadow);
+}
+
+.project-delete-modal::backdrop {
+    background: rgba(0, 0, 0, 0.72);
+}
+
+.project-delete-modal-content {
+    padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.project-delete-modal h4 {
+    margin-top: 0.7rem;
+    font-size: 2rem;
+}
+
+.project-delete-modal p:not(.section-label) {
+    margin-top: 1rem;
+    color: var(--muted);
+}
+
+.project-delete-modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+}
+
+.button-danger {
+    color: #fff;
+    background: var(--orange);
+    border-color: var(--orange);
+}
+
 .project-empty {
     grid-column: 1 / -1;
 }

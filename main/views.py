@@ -4,6 +4,7 @@ from django.core import serializers
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import slugify
+from django.views.decorators.http import require_POST
 
 from main.forms import ProjectForm
 from main.models import Experience, Project
@@ -103,3 +104,13 @@ def create_project(request):
         form=form,
     )
     return render(request, 'projects_form.html', context)
+
+
+@staff_member_required
+@require_POST
+def delete_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    title = project.title
+    project.delete()
+    messages.success(request, f'Project "{title}" berhasil dihapus.')
+    return redirect('main:show_projects')

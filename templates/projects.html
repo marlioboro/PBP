@@ -65,10 +65,18 @@
                                     <li>{{ technology }}</li>
                                 {% endfor %}
                             </ul>
-                            <a class="project-link" href="{% url 'main:show_project_detail' project.slug %}">
-                                Read case file <span aria-hidden="true">→</span>
-                            </a>
+                            <div class="project-card-actions">
+                                <a class="project-link" href="{% url 'main:show_project_detail' project.slug %}">
+                                    Read case file <span aria-hidden="true">→</span>
+                                </a>
+                                {% if request.user.is_staff %}
+                                    <button class="project-delete-trigger" type="button" data-delete-dialog="delete-project-{{ project.id }}" aria-label="Delete {{ project.title }}">Delete</button>
+                                {% endif %}
+                            </div>
                         </div>
+                        {% if request.user.is_staff %}
+                            {% include 'components/project_delete_modal.html' %}
+                        {% endif %}
                     </article>
                 {% empty %}
                     <div class="empty-state project-empty">

@@ -1,7 +1,7 @@
 import json
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -219,6 +219,51 @@ class ProjectTest(TestCase):
         self.assertEqual(response.context['project_list'], [])
         self.assertContains(response, 'Tidak ada proyek dengan judul')
         self.assertNotContains(response, self.project.summary)
+
+    def test_delete_controls_are_visible_only_to_staff(self):
+        url = reverse('main:show_projects')
+        self.assertNotContains(self.client.get(url), 'data-delete-dialog')
+        user = get_user_model().objects.create_user(
+            username='portfolio-admin', password='test-password', is_staff=True
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(url)
+
+        self.assertContains(response, 'data-delete-dialog')
+        self.assertContains(
+            response,
+            reverse('main:delete_project', args=[self.project.id]),
+        )
+
+    def test_delete_requires_staff_and_post(self):
+        url = reverse('main:delete_project', args=[self.project.id])
+        self.assertEqual(self.client.post(url).status_code, 302)
+        self.assertTrue(Project.objects.filter(id=self.project.id).exists())
+        user = get_user_model().objects.create_user(
+            username='portfolio-admin', password='test-password', is_staff=True
+        )
+        self.client.force_login(user)
+        self.assertEqual(self.client.get(url).status_code, 405)
+
+        response = self.client.post(url)
+
+        self.assertRedirects(response, reverse('main:show_projects'))
+        self.assertFalse(Project.objects.filter(id=self.project.id).exists())
+
+    def test_delete_post_requires_csrf_token(self):
+        user = get_user_model().objects.create_user(
+            username='portfolio-admin', password='test-password', is_staff=True
+        )
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(user)
+
+        response = csrf_client.post(
+            reverse('main:delete_project', args=[self.project.id])
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Project.objects.filter(id=self.project.id).exists())
 
 
 class CuratedPortfolioDataTest(TestCase):
