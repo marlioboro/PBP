@@ -15,7 +15,10 @@ class ExperienceForm(forms.ModelForm):
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5}),
-            'ended_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'ended_at': forms.DateTimeInput(
+                attrs={'type': 'datetime-local'},
+                format='%Y-%m-%dT%H:%M',
+            ),
         }
         help_texts = {
             'thumbnail': 'Opsional; gunakan URL gambar yang diawali https://.',

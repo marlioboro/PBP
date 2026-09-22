@@ -155,6 +155,24 @@ class MainTest(TestCase):
         )
         self.assertEqual(Experience.objects.count(), 1)
 
+    def test_update_form_contains_current_experience_values(self):
+        self.experience.ended_at = timezone.datetime(
+            2026,
+            9,
+            22,
+            10,
+            30,
+            tzinfo=timezone.get_current_timezone(),
+        )
+        self.experience.save()
+
+        response = self.client.get(
+            reverse('main:update_experience', args=[self.experience.id])
+        )
+
+        self.assertContains(response, self.experience.title)
+        self.assertContains(response, '2026-09-22T10:30')
+
     def test_update_unknown_experience_returns_404(self):
         response = self.client.get(
             reverse(
