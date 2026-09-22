@@ -1,6 +1,26 @@
 from django import forms
 
-from main.models import Project
+from main.models import Experience, Project
+
+
+class ExperienceForm(forms.ModelForm):
+    class Meta:
+        model = Experience
+        fields = [
+            'title',
+            'description',
+            'category',
+            'thumbnail',
+            'ended_at',
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 5}),
+            'ended_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+        help_texts = {
+            'thumbnail': 'Opsional; gunakan URL gambar yang diawali https://.',
+            'ended_at': 'Kosongkan jika pengalaman masih berlangsung.',
+        }
 
 
 class ProjectForm(forms.ModelForm):

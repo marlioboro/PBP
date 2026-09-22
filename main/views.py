@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
-from main.forms import ProjectForm
+from main.forms import ExperienceForm, ProjectForm
 from main.models import Experience, Project
 
 
@@ -40,6 +40,26 @@ def show_experience(request):
         experience_list=Experience.objects.all(),
     )
     return render(request, 'experience.html', context)
+
+
+def create_experience(request):
+    form = ExperienceForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        experience = form.save()
+        messages.success(
+            request,
+            f'Experience "{experience.title}" berhasil ditambahkan.',
+        )
+        return redirect('main:show_experience')
+
+    context = build_context(
+        active_page='experience',
+        form=form,
+        form_title='Add experience',
+        form_label='// NEW_JOURNEY',
+        submit_label='Save experience',
+    )
+    return render(request, 'experience_form.html', context)
 
 
 def show_projects(request):

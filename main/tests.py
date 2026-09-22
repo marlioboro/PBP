@@ -69,6 +69,41 @@ class MainTest(TestCase):
         self.assertContains(response, 'Selesai')
         self.assertNotContains(response, 'Sedang berlangsung')
 
+    def test_experience_create_form_is_accessible(self):
+        response = self.client.get(reverse('main:create_experience'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'experience_form.html')
+        self.assertContains(response, 'Save experience')
+        self.assertContains(response, 'csrfmiddlewaretoken')
+
+    def test_create_experience_saves_valid_form(self):
+        response = self.client.post(
+            reverse('main:create_experience'),
+            {
+                'title': 'Teaching Assistant',
+                'description': 'Helped students learn Django.',
+                'category': 'part-time',
+                'thumbnail': 'https://example.com/assistant.png',
+                'ended_at': '',
+            },
+        )
+
+        self.assertRedirects(response, reverse('main:show_experience'))
+        self.assertTrue(
+            Experience.objects.filter(title='Teaching Assistant').exists()
+        )
+
+    def test_create_experience_rejects_invalid_form(self):
+        response = self.client.post(
+            reverse('main:create_experience'),
+            {'title': '', 'description': '', 'category': 'organization'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'This field is required.')
+        self.assertEqual(Experience.objects.count(), 1)
+
 
 class ProjectTest(TestCase):
     def setUp(self):

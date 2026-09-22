@@ -17,7 +17,10 @@
 
     <section class="timeline-section section-space" aria-labelledby="experience-list-heading">
         <div class="container">
-            <h2 class="visually-hidden" id="experience-list-heading">Experience list</h2>
+            <div class="archive-heading">
+                <h2 id="experience-list-heading">Experience list</h2>
+                <a class="button button-ghost" href="{% url 'main:create_experience' %}">+ Add experience</a>
+            </div>
             <ol class="timeline-list">
                 {% for experience in experience_list %}
                     <li class="timeline-item">
