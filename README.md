@@ -71,3 +71,35 @@ Ringkasan log prompting:
 3. Implementasi view, route, dan template dinamis.
 4. Penambahan unit test.
 5. QA responsive dan perbaikan desain.
+
+### Tugas 3
+
+1. **Kenapa menggunakan `ModelForm` dan `{% csrf_token %}`**
+
+Saya menggunakan `ModelForm` karena struktur form bisa langsung mengikuti model Django. Field, tipe input, validasi, dan proses penyimpanan tidak perlu ditulis ulang secara manual. Pada `ExperienceForm`, saya cukup menentukan field yang boleh diisi, lalu form yang sama bisa dipakai untuk create dan update. Untuk update, objek lama diberikan lewat `instance`, sehingga `form.save()` memperbarui data yang sudah ada dan tidak membuat objek baru.
+
+`{% csrf_token %}` diperlukan pada form POST untuk mencegah Cross-Site Request Forgery. Django membuat token yang terhubung dengan pengguna atau browser, lalu memeriksa token tersebut ketika request diterima. Request perubahan data yang tidak membawa token valid akan ditolak, sehingga situs lain tidak bisa diam-diam menyuruh browser pengguna mengirim form ke website ini.
+
+2. **Kenapa JSON lebih banyak dipakai dibanding XML**
+
+JSON lebih ringkas karena memakai pasangan key-value dan array tanpa opening serta closing tag sebanyak XML. Struktur JSON juga langsung cocok dengan object dan array pada JavaScript, jadi lebih mudah dikirim dari backend dan diproses oleh frontend. Hampir semua bahasa modern sudah punya parser JSON bawaan. XML tetap berguna untuk sistem yang membutuhkan namespace, schema, atau format dokumen yang kompleks, tetapi untuk API web modern JSON biasanya lebih sederhana dan menghasilkan payload yang lebih kecil.
+
+3. **Alur view saat mengembalikan JSON dan alasan serialization**
+
+Ketika `/api/experiences/` dibuka, `main/urls.py` mengarahkan request ke `get_experiences_json`. View mengambil data `Experience` melalui Django ORM, menerapkan filter judul jika ada, lalu `serializers.serialize()` mengubah QuerySet tersebut menjadi teks JSON. Teks itu dikembalikan lewat `HttpResponse` dengan content type `application/json`.
+
+Serialization diperlukan karena objek model dan QuerySet Django bukan data JSON biasa. Di dalamnya ada objek Python serta tipe seperti UUID dan `datetime` yang tidak bisa langsung dikirim sebagai respons JSON. Serializer mengubahnya menjadi struktur teks yang konsisten dan bisa dibaca client. Pada halaman Experience, respons tersebut di-deserialize kembali menjadi objek yang dapat digunakan oleh Django Template Language.
+
+#### Penggunaan AI
+
+Saya memakai Codex sebagai pendamping untuk membaca checklist Tugas 3, menyusun CRUD Experience, membuat endpoint JSON beserta proses deserialisasi, menulis unit test, dan melakukan audit akhir. Pengerjaan dilakukan bertahap per fitur, kemudian setiap tahap diuji sebelum dibuat menjadi commit terpisah.
+
+Saya menentukan bahwa Experience menjadi bagian portofolio yang dikembangkan, mempertahankan arah desain pixel-game, dan akan melakukan QA serta push Git sendiri. Saya juga meninjau hasil implementasi supaya alur create, update, delete, pencarian, dan tampilan data sesuai dengan website yang sebenarnya.
+
+Ringkasan log prompting:
+
+1. Audit requirement Tugas 3.
+2. Implementasi `ExperienceForm` dan create data.
+3. Implementasi endpoint JSON, filter, dan deserialisasi.
+4. Implementasi update dan delete data.
+5. Unit test dan audit akhir checklist.
