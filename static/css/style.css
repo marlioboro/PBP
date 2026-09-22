@@ -1574,6 +1574,18 @@ html[data-theme="dark"] .pixel-sun {
     color: var(--muted);
 }
 
+.timeline-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 1.25rem;
+}
+
+.timeline-actions .button {
+    min-height: 2.5rem;
+    padding: 0.55rem 0.85rem;
+}
+
 .empty-state {
     display: flex;
     align-items: center;

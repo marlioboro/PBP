@@ -80,6 +80,37 @@ def create_experience(request):
     return render(request, 'experience_form.html', context)
 
 
+def update_experience(request, experience_id):
+    experience = get_object_or_404(Experience, id=experience_id)
+    form = ExperienceForm(request.POST or None, instance=experience)
+    if request.method == 'POST' and form.is_valid():
+        experience = form.save()
+        messages.success(
+            request,
+            f'Experience "{experience.title}" berhasil diperbarui.',
+        )
+        return redirect('main:show_experience')
+
+    context = build_context(
+        active_page='experience',
+        form=form,
+        experience=experience,
+        form_title='Edit experience',
+        form_label='// UPDATE_JOURNEY',
+        submit_label='Update experience',
+    )
+    return render(request, 'experience_form.html', context)
+
+
+@require_POST
+def delete_experience(request, experience_id):
+    experience = get_object_or_404(Experience, id=experience_id)
+    title = experience.title
+    experience.delete()
+    messages.success(request, f'Experience "{title}" berhasil dihapus.')
+    return redirect('main:show_experience')
+
+
 def show_projects(request):
     # Tutorial 03 demonstrates the JSON delivery boundary even though this
     # Django app could query the ORM directly for its own template.

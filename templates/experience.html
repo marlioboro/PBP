@@ -47,8 +47,13 @@
                             <div class="timeline-content">
                                 <h3>{{ experience.title }}</h3>
                                 <p>{{ experience.description }}</p>
+                                <div class="timeline-actions">
+                                    <a class="button button-ghost" href="{% url 'main:update_experience' experience.id %}">Edit</a>
+                                    <button class="button button-danger" type="button" data-delete-dialog="delete-experience-{{ experience.id }}">Delete</button>
+                                </div>
                             </div>
                         </article>
+                        {% include 'components/experience_delete_modal.html' %}
                     </li>
                 {% empty %}
                     <li class="empty-state">

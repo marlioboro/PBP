@@ -135,6 +135,55 @@ class MainTest(TestCase):
         self.assertContains(response, 'Tidak ada pengalaman dengan judul')
         self.assertNotContains(response, self.experience.description)
 
+    def test_update_experience_edits_existing_object(self):
+        response = self.client.post(
+            reverse('main:update_experience', args=[self.experience.id]),
+            {
+                'title': 'RISTEK Fasilkom UI — Game Development SIG',
+                'description': self.experience.description,
+                'category': 'organization',
+                'thumbnail': '',
+                'ended_at': '',
+            },
+        )
+
+        self.assertRedirects(response, reverse('main:show_experience'))
+        self.experience.refresh_from_db()
+        self.assertEqual(
+            self.experience.title,
+            'RISTEK Fasilkom UI — Game Development SIG',
+        )
+        self.assertEqual(Experience.objects.count(), 1)
+
+    def test_update_unknown_experience_returns_404(self):
+        response = self.client.get(
+            reverse(
+                'main:update_experience',
+                args=['00000000-0000-0000-0000-000000000000'],
+            )
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_delete_experience_accepts_post_only(self):
+        url = reverse('main:delete_experience', args=[self.experience.id])
+        self.assertEqual(self.client.get(url).status_code, 405)
+
+        response = self.client.post(url)
+
+        self.assertRedirects(response, reverse('main:show_experience'))
+        self.assertFalse(Experience.objects.filter(id=self.experience.id).exists())
+
+    def test_delete_experience_requires_csrf_token(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+
+        response = csrf_client.post(
+            reverse('main:delete_experience', args=[self.experience.id])
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Experience.objects.filter(id=self.experience.id).exists())
+
 
 class ProjectTest(TestCase):
     def setUp(self):

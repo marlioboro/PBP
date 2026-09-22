@@ -1,0 +1,16 @@
+<dialog class="project-delete-modal" id="delete-experience-{{ experience.id }}" aria-labelledby="delete-experience-title-{{ experience.id }}" aria-describedby="delete-experience-description-{{ experience.id }}">
+    <div class="project-delete-modal-content">
+        <p class="section-label">// CONFIRM_DELETE</p>
+        <h4 id="delete-experience-title-{{ experience.id }}">Delete experience?</h4>
+        <p id="delete-experience-description-{{ experience.id }}">"{{ experience.title }}" akan dihapus dari database. Aksi ini tidak bisa dibatalkan.</p>
+        <div class="project-delete-modal-actions">
+            <form method="dialog">
+                <button class="button button-ghost" type="submit">Cancel</button>
+            </form>
+            <form method="post" action="{% url 'main:delete_experience' experience.id %}">
+                {% csrf_token %}
+                <button class="button button-danger" type="submit">Yes, delete</button>
+            </form>
+        </div>
+    </div>
+</dialog>
