@@ -21,6 +21,16 @@
                 <h2 id="experience-list-heading">Experience list</h2>
                 <a class="button button-ghost" href="{% url 'main:create_experience' %}">+ Add experience</a>
             </div>
+            <form class="project-search" method="get" action="{% url 'main:show_experience' %}" role="search">
+                <label for="experience-title-search">Search experience title</label>
+                <div class="project-search-controls">
+                    <input id="experience-title-search" name="title" type="search" value="{{ title_query }}" placeholder="Try: RISTEK" autocomplete="off">
+                    <button class="button button-primary" type="submit">Search</button>
+                    {% if title_query %}
+                        <a class="button button-ghost" href="{% url 'main:show_experience' %}">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
             <ol class="timeline-list">
                 {% for experience in experience_list %}
                     <li class="timeline-item">
@@ -43,7 +53,11 @@
                 {% empty %}
                     <li class="empty-state">
                         <span aria-hidden="true">[ ]</span>
-                        <p>Belum ada pengalaman yang ditambahkan.</p>
+                        {% if title_query %}
+                            <p>Tidak ada pengalaman dengan judul "{{ title_query }}".</p>
+                        {% else %}
+                            <p>Belum ada pengalaman yang ditambahkan.</p>
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ol>

@@ -35,11 +35,29 @@ def show_main(request):
 
 
 def show_experience(request):
+    experiences = [
+        item.object
+        for item in serializers.deserialize(
+            'json', get_experiences_json(request).content
+        )
+    ]
     context = build_context(
         active_page='experience',
-        experience_list=Experience.objects.all(),
+        experience_list=experiences,
+        title_query=request.GET.get('title', '').strip(),
     )
     return render(request, 'experience.html', context)
+
+
+def get_experiences_json(request):
+    experiences = Experience.objects.all().order_by('-started_at')
+    title_query = request.GET.get('title', '').strip()
+    if title_query:
+        experiences = experiences.filter(title__icontains=title_query)
+    return HttpResponse(
+        serializers.serialize('json', experiences),
+        content_type='application/json',
+    )
 
 
 def create_experience(request):

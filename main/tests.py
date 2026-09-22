@@ -104,6 +104,37 @@ class MainTest(TestCase):
         self.assertContains(response, 'This field is required.')
         self.assertEqual(Experience.objects.count(), 1)
 
+    def test_experience_json_endpoint_returns_model_data(self):
+        response = self.client.get(reverse('main:get_experiences_json'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response['Content-Type'].startswith('application/json'))
+        data = json.loads(response.content)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['pk'], str(self.experience.id))
+        self.assertEqual(data[0]['fields']['title'], self.experience.title)
+
+    def test_experience_json_filter_is_case_insensitive(self):
+        response = self.client.get(
+            reverse('main:get_experiences_json'), {'title': '  ristek  '}
+        )
+        missing = self.client.get(
+            reverse('main:get_experiences_json'), {'title': 'missing'}
+        )
+
+        self.assertEqual(len(json.loads(response.content)), 1)
+        self.assertEqual(json.loads(missing.content), [])
+
+    def test_experience_page_displays_deserialized_json_results(self):
+        response = self.client.get(
+            reverse('main:show_experience'), {'title': 'missing'}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['experience_list'], [])
+        self.assertContains(response, 'Tidak ada pengalaman dengan judul')
+        self.assertNotContains(response, self.experience.description)
+
 
 class ProjectTest(TestCase):
     def setUp(self):
