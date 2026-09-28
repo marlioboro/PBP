@@ -103,3 +103,44 @@ Ringkasan log prompting:
 3. Implementasi endpoint JSON, filter, dan deserialisasi.
 4. Implementasi update dan delete data.
 5. Unit test dan audit akhir checklist.
+
+### Tugas 4
+
+Pada Tugas 4, website ditambahin sistem register, login, dan logout menggunakan autentikasi bawaan Django. Session dipakai supaya Django tetap mengenali akun di request berikutnya, sedangkan cookie `last_login` menyimpan waktu login terakhir dan dihapus lagi saat logout. Project dan Experience tetap bisa dibaca tanpa login, tapi semua tindakan yang mengubah data diperiksa lagi di sisi server.
+
+Hak akses yang diterapkan:
+
+| Peran | Baca data | Star/unstar | Update Experience | Create/delete |
+| --- | --- | --- | --- | --- |
+| Pengunjung | Ya | Harus login | Tidak | Tidak |
+| Pengguna biasa | Ya | Ya | Tidak | Tidak |
+| Editor | Ya | Ya | Ya | Tidak |
+| Superuser | Ya | Ya | Ya | Ya |
+
+Role Editor diterapkan dengan Django Group bernama `Editor`. Migration membuat group tersebut secara otomatis, tetapi penentuan akun Editor tetap dilakukan lewat Django Admin. Pemeriksaan izin tidak cuma dilakukan di template. View tetap memeriksa akun dengan `login_required`, `is_superuser`, dan keanggotaan group, sehingga mengetik URL aksi secara langsung tidak bisa melewati aturan akses.
+
+#### Setup Tugas 4
+
+```powershell
+py -m pip install -r requirements.txt
+py manage.py migrate
+py manage.py createsuperuser
+py manage.py runserver
+```
+
+Setelah server berjalan, buka `http://127.0.0.1:8000/admin/`, login dengan akun superuser, lalu buka **Authentication and Authorization → Groups → Editor** untuk menambahkan akun yang ingin dijadikan Editor. Akun biasa dapat dibuat melalui halaman `/register/`.
+
+Untuk menjalankan pemeriksaan dan unit test:
+
+```powershell
+py manage.py check
+py manage.py test
+```
+
+#### Penggunaan AI
+
+Aku pake Codex sebagai pendamping buat bantu ninjau checklist Tutorial dan Tugas 4, ngecek implementasi autentikasi dan hak akses, serta bantu nyusun unit test untuk tiap peran. Aku ngasih instruksi dan revisi secara bertahap, mulai dari register, login, logout, cookie `last_login`, role Editor, sampe fitur star dan pengamanan endpoint JSON.
+
+Aku sendiri yang nentuin Experience sebagai bagian Tugas 3 yang mau dilanjutin, nentuin pembagian hak akses tiap role, ngecek apakah tombol yang muncul udah sesuai, dan mastiin alur websitenya masih cocok sama desain portofolio sebelumnya. Aku juga yang ngatur urutan pengerjaan antara Tutorial 4 dan Tugas 4, minta commit dibagi per fitur, jalanin dan ngecek website secara lokal, serta ngelola push ke GitHub dan PWS.
+
+Selama prosesnya, aku tetap ngecek ulang hasil dari AI dan minta perbaikan kalau belum sesuai kondisi tugas. Salah satu revisinya adalah mengganti pemeriksaan lama yang masih pake `is_staff` menjadi pembagian antara Editor dan superuser, serta memastikan pembatasan akses bukan cuma di tombol template, tapi juga diperiksa langsung di view. Dengan begitu, user yang nggak punya izin tetap nggak bisa menjalankan aksi hanya dengan membuka URL-nya secara langsung.
