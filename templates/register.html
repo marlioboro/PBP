@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Register — {{ name }}{% endblock %}
+
+{% block content %}
+    <section class="form-hero section-space">
+        <div class="container form-layout">
+            <p class="section-label">// CREATE_ACCOUNT</p>
+            <h1>Join the<br><span>party.</span></h1>
+            <p>Create an account to star projects in this portfolio.</p>
+        </div>
+    </section>
+
+    <section class="section-space auth-section">
+        <div class="container form-layout">
+            <form method="post" action="{% url 'main:register' %}" class="project-form">
+                {% csrf_token %}
+
+                {% for error in form.non_field_errors %}
+                    <p class="form-errors">{{ error }}</p>
+                {% endfor %}
+
+                {% for field in form %}
+                    <div class="form-field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}<small>{{ field.help_text|safe }}</small>{% endif %}
+                        {% for error in field.errors %}
+                            <p class="field-errors">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <div class="form-actions">
+                    <button type="submit" class="button button-primary">Register</button>
+                    <a class="button button-ghost" href="{% url 'main:login' %}">Already have an account?</a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Login — {{ name }}{% endblock %}
+
+{% block content %}
+    <section class="form-hero section-space">
+        <div class="container form-layout">
+            <p class="section-label">// LOAD_SESSION</p>
+            <h1>Continue<br><span>quest.</span></h1>
+            <p>Log in to use account-only actions.</p>
+        </div>
+    </section>
+
+    <section class="section-space auth-section">
+        <div class="container form-layout">
+            <form method="post" action="{% url 'main:login' %}" class="project-form">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="form-field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <p class="field-errors">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                {% for error in form.non_field_errors %}
+                    <p class="form-errors">{{ error }}</p>
+                {% endfor %}
+
+                <div class="form-actions">
+                    <button type="submit" class="button button-primary">Login</button>
+                    <a class="button button-ghost" href="{% url 'main:register' %}">Create account</a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}

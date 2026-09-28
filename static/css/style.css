@@ -1404,6 +1404,24 @@ html[data-theme="dark"] .pixel-sun {
     margin-top: 0.5rem;
 }
 
+.nav-user {
+    padding: 0.55rem 0.7rem;
+    color: var(--lime);
+    font-family: var(--pixel);
+    font-weight: 700;
+}
+
+.last-login {
+    margin-top: 1rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+}
+
+.auth-section {
+    padding-top: 0;
+}
+
 /* Project detail */
 .project-detail {
     min-height: calc(100vh - 12rem);

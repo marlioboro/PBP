@@ -55,6 +55,19 @@
                         class="nav-link{% if active_page == 'experience' %} is-active{% endif %}"
                         {% if active_page == 'experience' %}aria-current="page"{% endif %}
                     >Experience</a>
+                    {% if user.is_authenticated %}
+                        <span class="nav-user">{{ user.username }}</span>
+                        <a href="{% url 'main:logout' %}" class="nav-link">Logout</a>
+                    {% else %}
+                        <a
+                            href="{% url 'main:login' %}"
+                            class="nav-link{% if active_page == 'login' %} is-active{% endif %}"
+                        >Login</a>
+                        <a
+                            href="{% url 'main:register' %}"
+                            class="nav-link{% if active_page == 'register' %} is-active{% endif %}"
+                        >Register</a>
+                    {% endif %}
                 </nav>
 
                 <button class="theme-toggle" type="button" data-theme-toggle aria-label="Theme: System">
