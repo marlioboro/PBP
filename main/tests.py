@@ -203,6 +203,71 @@ class MainTest(TestCase):
         self.assertTrue(Experience.objects.filter(id=self.experience.id).exists())
 
 
+class AuthenticationTest(TestCase):
+    def test_register_creates_user_and_redirects_to_login(self):
+        response = self.client.post(
+            reverse('main:register'),
+            {
+                'username': 'new-player',
+                'password1': 'Strong-pass-2026!',
+                'password2': 'Strong-pass-2026!',
+            },
+        )
+
+        self.assertRedirects(response, reverse('main:login'))
+        self.assertTrue(
+            get_user_model().objects.filter(username='new-player').exists()
+        )
+
+    def test_login_sets_session_and_last_login_cookie(self):
+        user = get_user_model().objects.create_user(
+            username='player', password='Strong-pass-2026!'
+        )
+
+        response = self.client.post(
+            reverse('main:login'),
+            {'username': user.username, 'password': 'Strong-pass-2026!'},
+        )
+
+        self.assertRedirects(response, reverse('main:show_main'))
+        self.assertIn('_auth_user_id', self.client.session)
+        self.assertIn('last_login', response.cookies)
+
+    def test_invalid_login_renders_form_error(self):
+        response = self.client.post(
+            reverse('main:login'),
+            {'username': 'missing', 'password': 'wrong-password'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'login.html')
+        self.assertContains(response, 'Please enter a correct username and password')
+
+    def test_logout_clears_session_and_last_login_cookie(self):
+        user = get_user_model().objects.create_user(
+            username='player', password='Strong-pass-2026!'
+        )
+        self.client.force_login(user)
+        self.client.cookies['last_login'] = '2026-09-28 12:00:00'
+
+        response = self.client.get(reverse('main:logout'))
+
+        self.assertRedirects(response, reverse('main:show_main'))
+        self.assertNotIn('_auth_user_id', self.client.session)
+        self.assertEqual(response.cookies['last_login']['max-age'], 0)
+
+    def test_navbar_reflects_authentication_status(self):
+        anonymous = self.client.get(reverse('main:show_main'))
+        self.assertContains(anonymous, reverse('main:login'))
+        self.assertContains(anonymous, reverse('main:register'))
+
+        user = get_user_model().objects.create_user(username='player')
+        self.client.force_login(user)
+        authenticated = self.client.get(reverse('main:show_main'))
+        self.assertContains(authenticated, user.username)
+        self.assertContains(authenticated, reverse('main:logout'))
+
+
 class ProjectTest(TestCase):
     def setUp(self):
         # Keep these tests independent from the portfolio records seeded by the
@@ -280,14 +345,20 @@ class ProjectTest(TestCase):
             f'href="{reverse("main:show_projects")}"',
         )
 
-    def test_create_form_requires_staff(self):
+    def test_create_form_requires_superuser(self):
         url = reverse('main:create_project')
-        self.assertEqual(self.client.get(url).status_code, 302)
-        self.assertEqual(self.client.post(url, {}).status_code, 302)
+        anonymous = self.client.get(url)
+        self.assertRedirects(anonymous, f'{reverse("main:login")}?next={url}')
 
-    def test_staff_can_create_project_with_unique_slug(self):
+        regular_user = get_user_model().objects.create_user(username='player')
+        self.client.force_login(regular_user)
+        self.assertEqual(self.client.get(url).status_code, 403)
+
+    def test_superuser_can_create_project_with_unique_slug(self):
         user = get_user_model().objects.create_user(
-            username='portfolio-admin', password='test-password', is_staff=True
+            username='portfolio-admin',
+            password='test-password',
+            is_superuser=True,
         )
         self.client.force_login(user)
         url = reverse('main:create_project')
@@ -312,7 +383,9 @@ class ProjectTest(TestCase):
 
     def test_create_form_rejects_invalid_project(self):
         user = get_user_model().objects.create_user(
-            username='portfolio-admin', password='test-password', is_staff=True
+            username='portfolio-admin',
+            password='test-password',
+            is_superuser=True,
         )
         self.client.force_login(user)
 
@@ -353,11 +426,13 @@ class ProjectTest(TestCase):
         self.assertContains(response, 'Tidak ada proyek dengan judul')
         self.assertNotContains(response, self.project.summary)
 
-    def test_delete_controls_are_visible_only_to_staff(self):
+    def test_delete_controls_are_visible_only_to_superuser(self):
         url = reverse('main:show_projects')
         self.assertNotContains(self.client.get(url), 'data-delete-dialog')
         user = get_user_model().objects.create_user(
-            username='portfolio-admin', password='test-password', is_staff=True
+            username='portfolio-admin',
+            password='test-password',
+            is_superuser=True,
         )
         self.client.force_login(user)
 
@@ -369,12 +444,20 @@ class ProjectTest(TestCase):
             reverse('main:delete_project', args=[self.project.id]),
         )
 
-    def test_delete_requires_staff_and_post(self):
+    def test_delete_requires_superuser_and_post(self):
         url = reverse('main:delete_project', args=[self.project.id])
         self.assertEqual(self.client.post(url).status_code, 302)
         self.assertTrue(Project.objects.filter(id=self.project.id).exists())
+
+        regular_user = get_user_model().objects.create_user(username='player')
+        self.client.force_login(regular_user)
+        self.assertEqual(self.client.post(url).status_code, 403)
+        self.assertTrue(Project.objects.filter(id=self.project.id).exists())
+
         user = get_user_model().objects.create_user(
-            username='portfolio-admin', password='test-password', is_staff=True
+            username='portfolio-admin',
+            password='test-password',
+            is_superuser=True,
         )
         self.client.force_login(user)
         self.assertEqual(self.client.get(url).status_code, 405)
@@ -386,7 +469,9 @@ class ProjectTest(TestCase):
 
     def test_delete_post_requires_csrf_token(self):
         user = get_user_model().objects.create_user(
-            username='portfolio-admin', password='test-password', is_staff=True
+            username='portfolio-admin',
+            password='test-password',
+            is_superuser=True,
         )
         csrf_client = Client(enforce_csrf_checks=True)
         csrf_client.force_login(user)
@@ -397,6 +482,57 @@ class ProjectTest(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertTrue(Project.objects.filter(id=self.project.id).exists())
+
+    def test_registered_user_can_toggle_star_once(self):
+        user = get_user_model().objects.create_user(username='player')
+        self.client.force_login(user)
+        url = reverse('main:toggle_star', args=[self.project.id])
+
+        first_response = self.client.post(url)
+
+        self.assertRedirects(first_response, reverse('main:show_projects'))
+        self.assertTrue(self.project.starred_by.filter(id=user.id).exists())
+        self.assertEqual(self.project.starred_by.count(), 1)
+
+        second_response = self.client.post(url)
+
+        self.assertRedirects(second_response, reverse('main:show_projects'))
+        self.assertFalse(self.project.starred_by.filter(id=user.id).exists())
+        self.assertEqual(self.project.starred_by.count(), 0)
+
+    def test_star_requires_login_post_and_csrf(self):
+        url = reverse('main:toggle_star', args=[self.project.id])
+        self.assertRedirects(
+            self.client.post(url),
+            f'{reverse("main:login")}?next={url}',
+        )
+
+        user = get_user_model().objects.create_user(username='player')
+        self.client.force_login(user)
+        self.assertEqual(self.client.get(url).status_code, 405)
+
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(user)
+        self.assertEqual(csrf_client.post(url).status_code, 403)
+
+    def test_project_page_shows_star_count_and_state(self):
+        user = get_user_model().objects.create_user(username='player')
+        self.project.starred_by.add(user)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('main:show_projects'))
+
+        self.assertContains(response, 'Unstar')
+        self.assertContains(response, 'star-count">1')
+
+    def test_json_uses_user_natural_key_for_stars(self):
+        user = get_user_model().objects.create_user(username='player')
+        self.project.starred_by.add(user)
+
+        response = self.client.get(reverse('main:get_projects_json'))
+        fields = json.loads(response.content)[0]['fields']
+
+        self.assertEqual(fields['starred_by'], [['player']])
 
 
 class CuratedPortfolioDataTest(TestCase):
