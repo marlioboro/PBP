@@ -19,7 +19,9 @@
         <div class="container">
             <div class="archive-heading">
                 <h2 id="experience-list-heading">Experience list</h2>
-                <a class="button button-ghost" href="{% url 'main:create_experience' %}">+ Add experience</a>
+                {% if user.is_superuser %}
+                    <a class="button button-ghost" href="{% url 'main:create_experience' %}">+ Add experience</a>
+                {% endif %}
             </div>
             <form class="project-search" method="get" action="{% url 'main:show_experience' %}" role="search">
                 <label for="experience-title-search">Search experience title</label>
@@ -48,12 +50,18 @@
                                 <h3>{{ experience.title }}</h3>
                                 <p>{{ experience.description }}</p>
                                 <div class="timeline-actions">
-                                    <a class="button button-ghost" href="{% url 'main:update_experience' experience.id %}">Edit</a>
-                                    <button class="button button-danger" type="button" data-delete-dialog="delete-experience-{{ experience.id }}">Delete</button>
+                                    {% if user.is_superuser or is_editor %}
+                                        <a class="button button-ghost" href="{% url 'main:update_experience' experience.id %}">Edit</a>
+                                    {% endif %}
+                                    {% if user.is_superuser %}
+                                        <button class="button button-danger" type="button" data-delete-dialog="delete-experience-{{ experience.id }}">Delete</button>
+                                    {% endif %}
                                 </div>
                             </div>
                         </article>
-                        {% include 'components/experience_delete_modal.html' %}
+                        {% if user.is_superuser %}
+                            {% include 'components/experience_delete_modal.html' %}
+                        {% endif %}
                     </li>
                 {% empty %}
                     <li class="empty-state">

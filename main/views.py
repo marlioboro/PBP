@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST
 
 from main.forms import ExperienceForm, ProjectForm
 from main.models import Experience, Project
+from main.permissions import can_update_portfolio, is_editor
 
 
 PROFILE_CONTEXT = {
@@ -93,6 +94,7 @@ def show_experience(request):
         active_page='experience',
         experience_list=experiences,
         title_query=request.GET.get('title', '').strip(),
+        is_editor=is_editor(request.user),
     )
     return render(request, 'experience.html', context)
 
@@ -108,7 +110,11 @@ def get_experiences_json(request):
     )
 
 
+@login_required(login_url='/login/')
 def create_experience(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
     form = ExperienceForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         experience = form.save()
@@ -128,7 +134,11 @@ def create_experience(request):
     return render(request, 'experience_form.html', context)
 
 
+@login_required(login_url='/login/')
 def update_experience(request, experience_id):
+    if not can_update_portfolio(request.user):
+        raise PermissionDenied
+
     experience = get_object_or_404(Experience, id=experience_id)
     form = ExperienceForm(request.POST or None, instance=experience)
     if request.method == 'POST' and form.is_valid():
@@ -150,8 +160,12 @@ def update_experience(request, experience_id):
     return render(request, 'experience_form.html', context)
 
 
+@login_required(login_url='/login/')
 @require_POST
 def delete_experience(request, experience_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
     experience = get_object_or_404(Experience, id=experience_id)
     title = experience.title
     experience.delete()
