@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -18,6 +19,10 @@ class MainTest(TestCase):
                 'and learned to turn gameplay ideas into prototypes.'
             ),
             category='organization',
+        )
+        self.owner = get_user_model().objects.create_user(
+            username='portfolio-owner',
+            is_superuser=True,
         )
 
     def test_main_url_is_accessible(self):
@@ -70,6 +75,7 @@ class MainTest(TestCase):
         self.assertNotContains(response, 'Sedang berlangsung')
 
     def test_experience_create_form_is_accessible(self):
+        self.client.force_login(self.owner)
         response = self.client.get(reverse('main:create_experience'))
 
         self.assertEqual(response.status_code, 200)
@@ -78,6 +84,7 @@ class MainTest(TestCase):
         self.assertContains(response, 'csrfmiddlewaretoken')
 
     def test_create_experience_saves_valid_form(self):
+        self.client.force_login(self.owner)
         response = self.client.post(
             reverse('main:create_experience'),
             {
@@ -95,6 +102,7 @@ class MainTest(TestCase):
         )
 
     def test_create_experience_rejects_invalid_form(self):
+        self.client.force_login(self.owner)
         response = self.client.post(
             reverse('main:create_experience'),
             {'title': '', 'description': '', 'category': 'organization'},
@@ -136,6 +144,7 @@ class MainTest(TestCase):
         self.assertNotContains(response, self.experience.description)
 
     def test_update_experience_edits_existing_object(self):
+        self.client.force_login(self.owner)
         response = self.client.post(
             reverse('main:update_experience', args=[self.experience.id]),
             {
@@ -156,6 +165,7 @@ class MainTest(TestCase):
         self.assertEqual(Experience.objects.count(), 1)
 
     def test_update_form_contains_current_experience_values(self):
+        self.client.force_login(self.owner)
         self.experience.ended_at = timezone.datetime(
             2026,
             9,
@@ -174,6 +184,7 @@ class MainTest(TestCase):
         self.assertContains(response, '2026-09-22T10:30')
 
     def test_update_unknown_experience_returns_404(self):
+        self.client.force_login(self.owner)
         response = self.client.get(
             reverse(
                 'main:update_experience',
@@ -184,6 +195,7 @@ class MainTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_delete_experience_accepts_post_only(self):
+        self.client.force_login(self.owner)
         url = reverse('main:delete_experience', args=[self.experience.id])
         self.assertEqual(self.client.get(url).status_code, 405)
 
@@ -194,6 +206,7 @@ class MainTest(TestCase):
 
     def test_delete_experience_requires_csrf_token(self):
         csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.owner)
 
         response = csrf_client.post(
             reverse('main:delete_experience', args=[self.experience.id])
@@ -201,6 +214,146 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertTrue(Experience.objects.filter(id=self.experience.id).exists())
+
+
+class ExperiencePermissionTest(TestCase):
+    def setUp(self):
+        self.experience = Experience.objects.create(
+            title='BEM Fasilkom UI',
+            description='Community service department.',
+            category='organization',
+        )
+        self.regular_user = get_user_model().objects.create_user(
+            username='regular-user'
+        )
+        self.editor = get_user_model().objects.create_user(username='editor-user')
+        self.editor_group, _ = Group.objects.get_or_create(name='Editor')
+        self.editor.groups.add(self.editor_group)
+        self.owner = get_user_model().objects.create_user(
+            username='portfolio-owner',
+            is_superuser=True,
+        )
+
+    def test_editor_group_is_created_by_migration(self):
+        self.assertTrue(Group.objects.filter(name='Editor').exists())
+
+    def test_create_is_available_only_to_superuser(self):
+        url = reverse('main:create_experience')
+        self.assertRedirects(
+            self.client.get(url),
+            f'{reverse("main:login")}?next={url}',
+        )
+
+        for user in (self.regular_user, self.editor):
+            self.client.force_login(user)
+            self.assertEqual(self.client.get(url).status_code, 403)
+
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_update_is_available_to_editor_and_superuser(self):
+        url = reverse('main:update_experience', args=[self.experience.id])
+        self.assertRedirects(
+            self.client.get(url),
+            f'{reverse("main:login")}?next={url}',
+        )
+
+        self.client.force_login(self.regular_user)
+        self.assertEqual(self.client.get(url).status_code, 403)
+
+        for user in (self.editor, self.owner):
+            self.client.force_login(user)
+            self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_delete_is_available_only_to_superuser(self):
+        url = reverse('main:delete_experience', args=[self.experience.id])
+        self.assertRedirects(
+            self.client.post(url),
+            f'{reverse("main:login")}?next={url}',
+        )
+
+        for user in (self.regular_user, self.editor):
+            self.client.force_login(user)
+            self.assertEqual(self.client.post(url).status_code, 403)
+            self.assertTrue(Experience.objects.filter(id=self.experience.id).exists())
+
+        self.client.force_login(self.owner)
+        self.assertRedirects(
+            self.client.post(url),
+            reverse('main:show_experience'),
+        )
+        self.assertFalse(Experience.objects.filter(id=self.experience.id).exists())
+
+    def test_action_controls_match_each_role(self):
+        list_url = reverse('main:show_experience')
+        edit_url = reverse(
+            'main:update_experience',
+            args=[self.experience.id],
+        )
+
+        for user in (None, self.regular_user):
+            if user:
+                self.client.force_login(user)
+            else:
+                self.client.logout()
+            response = self.client.get(list_url)
+            self.assertNotContains(response, '+ Add experience')
+            self.assertNotContains(response, f'href="{edit_url}"')
+            self.assertNotContains(response, 'data-delete-dialog')
+
+        self.client.force_login(self.editor)
+        editor_response = self.client.get(list_url)
+        self.assertNotContains(editor_response, '+ Add experience')
+        self.assertContains(editor_response, f'href="{edit_url}"')
+        self.assertNotContains(editor_response, 'data-delete-dialog')
+
+        self.client.force_login(self.owner)
+        owner_response = self.client.get(list_url)
+        self.assertContains(owner_response, '+ Add experience')
+        self.assertContains(owner_response, f'href="{edit_url}"')
+        self.assertContains(owner_response, 'data-delete-dialog')
+
+    def test_regular_user_can_toggle_experience_star(self):
+        url = reverse('main:toggle_experience_star', args=[self.experience.id])
+        self.client.force_login(self.regular_user)
+
+        self.assertRedirects(
+            self.client.post(url),
+            reverse('main:show_experience'),
+        )
+        self.assertTrue(
+            self.experience.starred_by.filter(id=self.regular_user.id).exists()
+        )
+
+        self.client.post(url)
+        self.assertFalse(
+            self.experience.starred_by.filter(id=self.regular_user.id).exists()
+        )
+
+    def test_experience_star_requires_login_post_and_csrf(self):
+        url = reverse('main:toggle_experience_star', args=[self.experience.id])
+        self.assertRedirects(
+            self.client.post(url),
+            f'{reverse("main:login")}?next={url}',
+        )
+
+        self.client.force_login(self.regular_user)
+        self.assertEqual(self.client.get(url).status_code, 405)
+
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.regular_user)
+        self.assertEqual(csrf_client.post(url).status_code, 403)
+
+    def test_experience_json_uses_user_natural_key(self):
+        self.experience.starred_by.add(self.regular_user)
+
+        response = self.client.get(reverse('main:get_experiences_json'))
+        records = json.loads(response.content)
+        record = next(
+            item for item in records if item['pk'] == str(self.experience.id)
+        )
+
+        self.assertEqual(record['fields']['starred_by'], [['regular-user']])
 
 
 class AuthenticationTest(TestCase):
