@@ -105,7 +105,11 @@ def get_experiences_json(request):
     if title_query:
         experiences = experiences.filter(title__icontains=title_query)
     return HttpResponse(
-        serializers.serialize('json', experiences),
+        serializers.serialize(
+            'json',
+            experiences,
+            use_natural_foreign_keys=True,
+        ),
         content_type='application/json',
     )
 
@@ -170,6 +174,17 @@ def delete_experience(request, experience_id):
     title = experience.title
     experience.delete()
     messages.success(request, f'Experience "{title}" berhasil dihapus.')
+    return redirect('main:show_experience')
+
+
+@login_required(login_url='/login/')
+@require_POST
+def toggle_experience_star(request, experience_id):
+    experience = get_object_or_404(Experience, id=experience_id)
+    if experience.starred_by.filter(id=request.user.id).exists():
+        experience.starred_by.remove(request.user)
+    else:
+        experience.starred_by.add(request.user)
     return redirect('main:show_experience')
 
 

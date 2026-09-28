@@ -50,6 +50,7 @@
                                 <h3>{{ experience.title }}</h3>
                                 <p>{{ experience.description }}</p>
                                 <div class="timeline-actions">
+                                    {% include 'components/experience_star.html' with experience=experience %}
                                     {% if user.is_superuser or is_editor %}
                                         <a class="button button-ghost" href="{% url 'main:update_experience' experience.id %}">Edit</a>
                                     {% endif %}
