@@ -26,7 +26,9 @@
         <div class="container">
             <div class="archive-heading">
                 <h2 id="project-list-heading">All projects</h2>
-                <a class="button button-ghost" href="{% url 'main:create_project' %}">+ Add project</a>
+                {% if user.is_superuser %}
+                    <a class="button button-ghost" href="{% url 'main:create_project' %}">+ Add project</a>
+                {% endif %}
             </div>
 
             <form class="project-search" method="get" action="{% url 'main:show_projects' %}" role="search">
@@ -69,12 +71,13 @@
                                 <a class="project-link" href="{% url 'main:show_project_detail' project.slug %}">
                                     Read case file <span aria-hidden="true">→</span>
                                 </a>
-                                {% if request.user.is_staff %}
+                                {% include 'components/project_star.html' with project=project %}
+                                {% if user.is_superuser %}
                                     <button class="project-delete-trigger" type="button" data-delete-dialog="delete-project-{{ project.id }}" aria-label="Delete {{ project.title }}">Delete</button>
                                 {% endif %}
                             </div>
                         </div>
-                        {% if request.user.is_staff %}
+                        {% if user.is_superuser %}
                             {% include 'components/project_delete_modal.html' %}
                         {% endif %}
                     </article>

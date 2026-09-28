@@ -1422,6 +1422,28 @@ html[data-theme="dark"] .pixel-sun {
     padding-top: 0;
 }
 
+.star-form {
+    display: inline;
+}
+
+.button-star {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--ink);
+}
+
+.button-star.is-starred {
+    background: var(--orange);
+}
+
+.star-count {
+    padding: 0.05rem 0.4rem;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    font-size: 0.8rem;
+}
+
 /* Project detail */
 .project-detail {
     min-height: calc(100vh - 12rem);
