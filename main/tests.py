@@ -444,25 +444,25 @@ class ProjectTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'projects.html')
 
-    def test_project_data_is_rendered_from_database(self):
+    def test_project_page_loads_data_with_ajax(self):
         response = self.client.get(reverse('main:show_projects'))
 
-        self.assertContains(response, self.project.title)
-        self.assertContains(response, self.project.summary)
-        self.assertContains(response, 'Cybersecurity &amp; CTF')
-        self.assertContains(response, 'Prototype')
-        self.assertContains(response, 'Cryptography')
-        self.assertContains(
-            response,
-            f'href="{reverse("main:show_project_detail", args=[self.project.slug])}"',
-        )
+        self.assertContains(response, 'id="project-grid"')
+        self.assertContains(response, reverse('main:get_projects_json'))
+        self.assertNotContains(response, self.project.summary)
+
+        data = self.client.get(reverse('main:get_projects_json')).json()
+        self.assertEqual(data[0]['fields']['summary'], self.project.summary)
+        self.assertEqual(data[0]['fields']['category'], 'Cybersecurity & CTF')
+        self.assertEqual(data[0]['fields']['technologies'], ['Python', 'Django', 'Cryptography'])
+        self.assertEqual(data[0]['fields']['slug'], self.project.slug)
 
     def test_empty_project_page_has_clear_message(self):
         Project.objects.all().delete()
         response = self.client.get(reverse('main:show_projects'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Belum ada proyek yang ditambahkan.')
+        self.assertContains(response, 'Belum ada proyek yang ditambahkan atau ditemukan.')
 
     def test_project_model_helpers(self):
         self.assertEqual(str(self.project), 'Cipher Quest')
@@ -575,13 +575,13 @@ class ProjectTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['project_list'], [])
-        self.assertContains(response, 'Tidak ada proyek dengan judul')
+        self.assertContains(response, 'value="missing"')
         self.assertNotContains(response, self.project.summary)
+        self.assertEqual(self.client.get(reverse('main:get_projects_json'), {'title': 'missing'}).json(), [])
 
     def test_delete_controls_are_visible_only_to_superuser(self):
         url = reverse('main:show_projects')
-        self.assertNotContains(self.client.get(url), 'data-delete-dialog')
+        self.assertNotContains(self.client.get(url), 'id="project-form"')
         user = get_user_model().objects.create_user(
             username='portfolio-admin',
             password='test-password',
@@ -591,10 +591,10 @@ class ProjectTest(TestCase):
 
         response = self.client.get(url)
 
-        self.assertContains(response, 'data-delete-dialog')
+        self.assertContains(response, 'id="project-form"')
         self.assertContains(
             response,
-            reverse('main:delete_project', args=[self.project.id]),
+            reverse('main:delete_project', args=['00000000-0000-0000-0000-000000000000']),
         )
 
     def test_delete_requires_superuser_and_post(self):
@@ -668,24 +668,73 @@ class ProjectTest(TestCase):
         csrf_client.force_login(user)
         self.assertEqual(csrf_client.post(url).status_code, 403)
 
-    def test_project_page_shows_star_count_and_state(self):
+    def test_project_json_shows_star_count_and_state(self):
         user = get_user_model().objects.create_user(username='player')
         self.project.starred_by.add(user)
         self.client.force_login(user)
 
-        response = self.client.get(reverse('main:show_projects'))
+        response = self.client.get(reverse('main:get_projects_json'))
 
-        self.assertContains(response, 'Unstar')
-        self.assertContains(response, 'star-count">1')
+        fields = response.json()[0]['fields']
+        self.assertTrue(fields['is_starred'])
+        self.assertEqual(fields['star_count'], 1)
+        self.assertEqual(fields['starred_by_names'], 'player')
 
-    def test_json_uses_user_natural_key_for_stars(self):
+    def test_json_does_not_expose_user_natural_key_for_stars(self):
         user = get_user_model().objects.create_user(username='player')
         self.project.starred_by.add(user)
 
         response = self.client.get(reverse('main:get_projects_json'))
         fields = json.loads(response.content)[0]['fields']
 
-        self.assertEqual(fields['starred_by'], [['player']])
+        self.assertEqual(fields['star_count'], 1)
+        self.assertNotIn('starred_by', fields)
+
+    def test_ajax_create_requires_superuser_post_and_csrf(self):
+        url = reverse('main:create_project_ajax')
+        payload = {
+            'title': 'New Quest', 'summary': 'A playable adventure.',
+            'category': 'game', 'status': 'released', 'role': 'Developer',
+            'technologies': 'Godot', 'project_url': '', 'thumbnail_url': '',
+        }
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.assertEqual(self.client.post(url, payload).status_code, 403)
+        regular = get_user_model().objects.create_user(username='player')
+        self.client.force_login(regular)
+        self.assertEqual(self.client.post(url, payload).status_code, 403)
+
+        owner = get_user_model().objects.create_user(username='owner', is_superuser=True)
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(owner)
+        self.assertEqual(csrf_client.post(url, payload).status_code, 403)
+        self.assertEqual(Project.objects.count(), 1)
+
+        self.client.force_login(owner)
+        response = self.client.post(url, payload)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()['counts']['total'], 2)
+        self.assertTrue(Project.objects.filter(slug='new-quest').exists())
+
+    def test_ajax_create_validates_and_strips_html(self):
+        owner = get_user_model().objects.create_user(username='owner', is_superuser=True)
+        self.client.force_login(owner)
+        url = reverse('main:create_project_ajax')
+        payload = {
+            'title': '<img src=x onerror=alert(1)>',
+            'summary': 'A summary', 'category': 'game', 'status': 'released',
+            'role': 'Developer', 'technologies': 'Godot',
+        }
+        rejected = self.client.post(url, payload)
+        self.assertEqual(rejected.status_code, 400)
+        self.assertIn('title', rejected.json()['errors'])
+
+        payload['title'] = '<b>Safe Quest</b>'
+        payload['summary'] = '<i>Great</i> game'
+        created = self.client.post(url, payload)
+        self.assertEqual(created.status_code, 201)
+        project = Project.objects.get(slug='safe-quest')
+        self.assertEqual(project.title, 'Safe Quest')
+        self.assertEqual(project.summary, 'Great game')
 
 
 class CuratedPortfolioDataTest(TestCase):
