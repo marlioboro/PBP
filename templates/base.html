@@ -23,6 +23,7 @@
     <script src="{% static 'js/theme.js' %}" defer></script>
     <script src="{% static 'js/parallax.js' %}" defer></script>
     <script src="{% static 'js/project-delete.js' %}" defer></script>
+    <script src="{% static 'js/toast.js' %}" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -123,5 +124,6 @@
             <p class="footer-meta">© 2026 · Built with Django</p>
         </div>
     </footer>
+    {% include 'components/toast.html' %}
 </body>
 </html>

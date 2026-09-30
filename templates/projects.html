@@ -14,9 +14,9 @@
             <div class="projects-summary">
                 <p>Games, data experiments, and technical quests—loaded directly from the Django database.</p>
                 <dl>
-                    <div><dt>{{ project_count|stringformat:"02d" }}</dt><dd>Total</dd></div>
-                    <div><dt>{{ released_count|stringformat:"02d" }}</dt><dd>Released</dd></div>
-                    <div><dt>{{ featured_count|stringformat:"02d" }}</dt><dd>Featured</dd></div>
+                    <div><dt id="project-count">{{ project_count|stringformat:"02d" }}</dt><dd>Total</dd></div>
+                    <div><dt id="released-count">{{ released_count|stringformat:"02d" }}</dt><dd>Released</dd></div>
+                    <div><dt id="featured-count">{{ featured_count|stringformat:"02d" }}</dt><dd>Featured</dd></div>
                 </dl>
             </div>
         </div>
@@ -27,71 +27,23 @@
             <div class="archive-heading">
                 <h2 id="project-list-heading">All projects</h2>
                 {% if user.is_superuser %}
-                    <a class="button button-ghost" href="{% url 'main:create_project' %}">+ Add project</a>
+                    <button class="button button-ghost" type="button" popovertarget="add-project-modal">+ Add project</button>
                 {% endif %}
             </div>
 
-            <form class="project-search" method="get" action="{% url 'main:show_projects' %}" role="search">
+            <form id="project-search-form" class="project-search" role="search">
                 <label for="project-title-search">Search project title</label>
                 <div class="project-search-controls">
                     <input id="project-title-search" name="title" type="search" value="{{ title_query }}" placeholder="Try: Sortify" autocomplete="off">
                     <button class="button button-primary" type="submit">Search</button>
-                    {% if title_query %}
-                        <a class="button button-ghost" href="{% url 'main:show_projects' %}">Clear</a>
-                    {% endif %}
+                    <button id="clear-project-search" class="button button-ghost" type="button" {% if not title_query %}hidden{% endif %}>Clear</button>
                 </div>
             </form>
 
-            <div class="project-grid">
-                {% for project in project_list %}
-                    <article class="project-card{% if project.featured %} is-featured{% endif %}">
-                        <a class="project-cover" href="{% url 'main:show_project_detail' project.slug %}" aria-label="View {{ project.title }} details">
-                            {% if project.thumbnail_url %}
-                                <img src="{{ project.thumbnail_url }}" alt="Cover art for {{ project.title }}">
-                            {% else %}
-                                <div class="project-placeholder" aria-hidden="true">
-                                    <span>&lt;/&gt;</span>
-                                    <small>NO_COVER.PNG</small>
-                                </div>
-                            {% endif %}
-                            <span class="project-status">{{ project.get_status_display }}</span>
-                            {% if project.featured %}<span class="featured-flag">Featured</span>{% endif %}
-                        </a>
-
-                        <div class="project-card-body">
-                            <p class="project-category">{{ project.get_category_display }} · {{ project.role }}</p>
-                            <h3><a href="{% url 'main:show_project_detail' project.slug %}">{{ project.title }}</a></h3>
-                            <p>{{ project.summary }}</p>
-                            <ul class="tag-list" aria-label="Technologies used">
-                                {% for technology in project.technology_list %}
-                                    <li>{{ technology }}</li>
-                                {% endfor %}
-                            </ul>
-                            <div class="project-card-actions">
-                                <a class="project-link" href="{% url 'main:show_project_detail' project.slug %}">
-                                    Read case file <span aria-hidden="true">→</span>
-                                </a>
-                                {% include 'components/project_star.html' with project=project %}
-                                {% if user.is_superuser %}
-                                    <button class="project-delete-trigger" type="button" data-delete-dialog="delete-project-{{ project.id }}" aria-label="Delete {{ project.title }}">Delete</button>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% if user.is_superuser %}
-                            {% include 'components/project_delete_modal.html' %}
-                        {% endif %}
-                    </article>
-                {% empty %}
-                    <div class="empty-state project-empty">
-                        <span aria-hidden="true">[ ]</span>
-                        {% if title_query %}
-                            <p>Tidak ada proyek dengan judul "{{ title_query }}".</p>
-                        {% else %}
-                            <p>Belum ada proyek yang ditambahkan.</p>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
+            <div id="project-loading" class="empty-state project-empty" role="status">Memuat proyek...</div>
+            <div id="project-error" class="empty-state project-empty hide" role="alert">Gagal memuat proyek. <button class="button button-ghost" id="retry-projects" type="button">Coba lagi</button></div>
+            <div id="project-empty" class="empty-state project-empty hide" role="status">Belum ada proyek yang ditambahkan atau ditemukan.</div>
+            <div id="project-grid" class="project-grid hide" aria-live="polite"></div>
 
             <p class="archive-source">
                 Full playable archive available on
@@ -99,4 +51,15 @@
             </p>
         </div>
     </section>
+    <form class="hide" aria-hidden="true">{% csrf_token %}</form>
+    {% if user.is_superuser %}{% include 'components/project_form_modal.html' %}{% endif %}
+    <div id="project-config" hidden
+        data-api-url="{% url 'main:get_projects_json' %}"
+        data-detail-url="{% url 'main:show_project_detail' 'project-placeholder' %}"
+        data-star-url="{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}"
+        data-delete-url="{% url 'main:delete_project' '00000000-0000-0000-0000-000000000000' %}"
+        data-create-url="{% url 'main:create_project_ajax' %}"
+        data-is-superuser="{{ user.is_superuser|yesno:'true,false' }}"></div>
+    {% load static %}
+    <script src="{% static 'js/projects.js' %}" defer></script>
 {% endblock %}

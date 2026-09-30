@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
@@ -189,39 +189,45 @@ def toggle_experience_star(request, experience_id):
 
 
 def show_projects(request):
-    # Tutorial 03 demonstrates the JSON delivery boundary even though this
-    # Django app could query the ORM directly for its own template.
-    projects = [
-        item.object
-        for item in serializers.deserialize(
-            'json', get_projects_json(request).content
-        )
-    ]
     all_projects = Project.objects.all()
     context = build_context(
         active_page='projects',
-        project_list=projects,
         project_count=all_projects.count(),
         released_count=all_projects.filter(status='released').count(),
         featured_count=all_projects.filter(featured=True).count(),
         title_query=request.GET.get('title', '').strip(),
+        form=ProjectForm() if request.user.is_superuser else None,
     )
     return render(request, 'projects.html', context)
 
 
 def get_projects_json(request):
-    projects = Project.objects.all()
+    projects = Project.objects.prefetch_related('starred_by').all()
     title_query = request.GET.get('title', '').strip()
     if title_query:
         projects = projects.filter(title__icontains=title_query)
-    return HttpResponse(
-        serializers.serialize(
-            'json',
-            projects,
-            use_natural_foreign_keys=True,
-        ),
-        content_type='application/json',
-    )
+    data = []
+    for project in projects:
+        starred_users = list(project.starred_by.all())
+        data.append({
+            'pk': str(project.id),
+            'fields': {
+                'title': project.title,
+                'slug': project.slug,
+                'summary': project.summary,
+                'category': project.get_category_display(),
+                'status': project.get_status_display(),
+                'role': project.role,
+                'technologies': project.technology_list,
+                'project_url': project.project_url,
+                'thumbnail_url': project.thumbnail_url,
+                'featured': project.featured,
+                'star_count': len(starred_users),
+                'is_starred': request.user in starred_users if request.user.is_authenticated else False,
+                'starred_by_names': ', '.join(user.username for user in starred_users),
+            },
+        })
+    return JsonResponse(data, safe=False)
 
 
 def show_project_detail(request, slug):
@@ -240,15 +246,7 @@ def create_project(request):
 
     form = ProjectForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        project = form.save(commit=False)
-        base_slug = slugify(project.title) or 'project'
-        slug = base_slug
-        suffix = 2
-        while Project.objects.filter(slug=slug).exists():
-            slug = f'{base_slug}-{suffix}'
-            suffix += 1
-        project.slug = slug
-        project.save()
+        project = save_project_with_slug(form)
         messages.success(request, f'Project "{project.title}" berhasil ditambahkan.')
         return redirect('main:show_projects')
 
@@ -257,6 +255,40 @@ def create_project(request):
         form=form,
     )
     return render(request, 'projects_form.html', context)
+
+
+def save_project_with_slug(form):
+    project = form.save(commit=False)
+    base_slug = slugify(project.title) or 'project'
+    slug = base_slug
+    suffix = 2
+    while Project.objects.filter(slug=slug).exists():
+        slug = f'{base_slug}-{suffix}'
+        suffix += 1
+    project.slug = slug
+    project.save()
+    return project
+
+
+@require_POST
+def create_project_ajax(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'message': 'Hanya pemilik portofolio yang dapat menambahkan proyek.'}, status=403)
+
+    form = ProjectForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse({'errors': form.errors.get_json_data()}, status=400)
+
+    project = save_project_with_slug(form)
+    return JsonResponse({
+        'message': 'Proyek berhasil ditambahkan.',
+        'pk': str(project.id),
+        'counts': {
+            'total': Project.objects.count(),
+            'released': Project.objects.filter(status='released').count(),
+            'featured': Project.objects.filter(featured=True).count(),
+        },
+    }, status=201)
 
 
 @login_required(login_url='/login/')

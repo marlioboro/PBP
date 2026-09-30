@@ -1,4 +1,6 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.utils.html import strip_tags
 
 from main.models import Experience, Project
 
@@ -48,3 +50,18 @@ class ProjectForm(forms.ModelForm):
             'project_url': 'Opsional; gunakan URL lengkap yang diawali https://.',
             'thumbnail_url': 'Opsional; gunakan URL gambar yang diawali https://.',
         }
+
+    def clean_title(self):
+        title = strip_tags(self.cleaned_data['title']).strip()
+        if not title:
+            raise ValidationError('Nama proyek tidak boleh hanya berisi tag HTML.')
+        return title
+
+    def clean_summary(self):
+        return strip_tags(self.cleaned_data['summary']).strip()
+
+    def clean_role(self):
+        return strip_tags(self.cleaned_data['role']).strip()
+
+    def clean_technologies(self):
+        return strip_tags(self.cleaned_data['technologies']).strip()

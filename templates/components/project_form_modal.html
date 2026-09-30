@@ -1,0 +1,23 @@
+<div id="add-project-modal" class="project-form-modal" popover="auto" role="dialog" aria-labelledby="add-project-modal-title">
+    <button class="project-form-modal-backdrop" type="button" popovertarget="add-project-modal" popovertargetaction="hide" aria-label="Close add project form"></button>
+    <div class="project-form-modal-content">
+        <button class="project-form-modal-close" type="button" popovertarget="add-project-modal" popovertargetaction="hide" aria-label="Close add project form">×</button>
+        <p class="section-label">// NEW_QUEST</p>
+        <h2 id="add-project-modal-title">Add a project</h2>
+        <form id="project-form" class="project-form" method="post" action="{% url 'main:create_project' %}">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-field{% if field.field.widget.input_type == 'checkbox' %} form-field-checkbox{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}</label>
+                    {{ field }}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    <div class="field-errors" data-error-for="{{ field.name }}"></div>
+                </div>
+            {% endfor %}
+            <div class="form-actions">
+                <button class="button button-primary" type="submit">Save project</button>
+                <button class="button button-ghost" type="button" popovertarget="add-project-modal" popovertargetaction="hide">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>

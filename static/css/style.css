@@ -4,6 +4,11 @@
     padding: 0;
 }
 
+[hidden],
+.hide {
+    display: none !important;
+}
+
 :root {
     color-scheme: dark;
     --bg: #07100f;
@@ -1297,6 +1302,95 @@ html[data-theme="dark"] .pixel-sun {
 
 .project-empty {
     grid-column: 1 / -1;
+}
+
+.project-form-modal {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 1rem;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+}
+
+.project-form-modal:popover-open {
+    display: grid;
+    place-items: center;
+}
+
+.project-form-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.72);
+    border: 0;
+}
+
+.project-form-modal-content {
+    position: relative;
+    width: min(100%, 42rem);
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    background: var(--surface);
+    border: 2px solid var(--lime);
+    box-shadow: var(--shadow);
+}
+
+.project-form-modal-content > .section-label,
+.project-form-modal-content > h2 {
+    margin: 1rem 2rem 0;
+}
+
+.project-form-modal-content .project-form {
+    border: 0;
+    box-shadow: none;
+}
+
+.project-form-modal-close {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.8rem;
+    padding: 0 0.5rem;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    font: 2rem var(--pixel);
+    cursor: pointer;
+}
+
+.site-toast {
+    position: fixed;
+    inset: auto 1.5rem 1.5rem auto;
+    width: min(24rem, calc(100vw - 3rem));
+    padding: 1rem 1.25rem;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: 2px solid var(--lime);
+    box-shadow: var(--shadow);
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.site-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.site-toast[data-type="error"] {
+    border-color: var(--orange);
+}
+
+.site-toast strong {
+    font-family: var(--pixel);
+}
+
+.site-toast p {
+    color: var(--muted);
 }
 
 .archive-source {
