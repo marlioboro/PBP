@@ -144,3 +144,25 @@ Aku pake Codex sebagai pendamping buat bantu ninjau checklist Tutorial dan Tugas
 Aku sendiri yang nentuin Experience sebagai bagian Tugas 3 yang mau dilanjutin, nentuin pembagian hak akses tiap role, ngecek apakah tombol yang muncul udah sesuai, dan mastiin alur websitenya masih cocok sama desain portofolio sebelumnya. Aku juga yang ngatur urutan pengerjaan antara Tutorial 4 dan Tugas 4, minta commit dibagi per fitur, jalanin dan ngecek website secara lokal, serta ngelola push ke GitHub dan PWS.
 
 Selama prosesnya, aku tetap ngecek ulang hasil dari AI dan minta perbaikan kalau belum sesuai kondisi tugas. Salah satu revisinya adalah mengganti pemeriksaan lama yang masih pake `is_staff` menjadi pembagian antara Editor dan superuser, serta memastikan pembatasan akses bukan cuma di tombol template, tapi juga diperiksa langsung di view. Dengan begitu, user yang nggak punya izin tetap nggak bisa menjalankan aksi hanya dengan membuka URL-nya secara langsung.
+
+### Tugas 5
+
+Halaman Experience sekarang memuat data dari `/api/experiences/` lewat Fetch API. Pencarian judul memakai debounce, dan ada filter kategori. Superuser bisa menambah pengalaman dari modal tanpa reload; pengguna yang login bisa memberi atau membatalkan star tanpa reload. Hak akses create, edit, dan delete tetap diperiksa di view Django. Data dari JSON ditampilkan dengan `textContent`, sementara input teks baru dibersihkan lewat `ExperienceForm`.
+
+Untuk mencoba secara lokal, jalankan `py manage.py runserver`, buka `/experience/`, lalu coba pencarian dan filter. Login sebagai superuser untuk mencoba modal tambah pengalaman, atau sebagai pengguna biasa untuk mencoba star. Jalankan `py manage.py test main` untuk pengujian otomatis.
+
+1. **Debouncing pada pencarian AJAX**
+
+   Debouncing menunda pencarian sampai pengguna berhenti mengetik selama jeda tertentu. Di halaman Experience, timer 300 ms di-reset setiap ada input baru. Jadi kalau aku mengetik “RISTEK”, browser tidak perlu mengirim request untuk setiap huruf; hasil baru diminta setelah ketikan berhenti. Ini mengurangi request yang tidak perlu dan mencegah hasil lama menimpa hasil pencarian terbaru.
+
+2. **Fungsi `await` saat memakai `fetch()`**
+
+   `fetch()` langsung mengembalikan Promise, bukan data respons yang siap dipakai. `await fetch(...)` menunggu respons HTTP, lalu `await response.json()` menunggu isi respons selesai dibaca dan diubah menjadi object JavaScript. Tanpa `await`, kode berikutnya bisa berjalan sebelum data tersedia; mencoba membaca `.ok` atau me-loop hasil JSON seolah-olah sudah ada akan salah. Alur yang sama bisa ditulis dengan `.then()`, tetapi tetap harus menangani Promise-nya.
+
+3. **XSS dan data AJAX**
+
+   XSS terjadi ketika input yang berisi kode HTML atau JavaScript ikut dijalankan di browser orang lain. Template Django biasanya meng-escape variabel secara otomatis. Saat data JSON dirakit sendiri oleh JavaScript dan dimasukkan lewat `innerHTML`, perlindungan itu tidak otomatis berlaku. Karena itu, teks Experience dibuat sebagai node DOM lalu diisi dengan `textContent`, supaya tag berbahaya tampil sebagai teks. `ExperienceForm` juga memakai `strip_tags` saat menerima judul dan deskripsi. Pembersihan di server ini menjadi lapisan tambahan, bukan pengganti cara menampilkan data yang aman di browser.
+
+#### Penggunaan AI
+
+Aku pake Codex untuk bantu membaca checklist Tugas 5, menerapkan pola AJAX dari Tutorial 5 ke Experience, menulis pengujian hak akses dan validasi, serta mengecek hasil implementasi. Aku menentukan Experience sebagai bagian yang dilanjutkan dari Tugas 3–4, mempertahankan pembagian peran dan desain pixel-game yang sudah dipilih sebelumnya, dan meminta perubahan dikerjakan bertahap. Log prompting dan revisinya tersedia di task Codex yang aku pakai selama pengerjaan. Hasil kode tetap perlu aku cek lagi di browser lokal sebelum dikumpulkan.
