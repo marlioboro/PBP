@@ -20,61 +20,39 @@
             <div class="archive-heading">
                 <h2 id="experience-list-heading">Experience list</h2>
                 {% if user.is_superuser %}
-                    <a class="button button-ghost" href="{% url 'main:create_experience' %}">+ Add experience</a>
+                    <button class="button button-ghost" type="button" popovertarget="add-experience-modal">+ Add experience</button>
                 {% endif %}
             </div>
-            <form class="project-search" method="get" action="{% url 'main:show_experience' %}" role="search">
+            <form id="experience-search-form" class="project-search" role="search">
                 <label for="experience-title-search">Search experience title</label>
                 <div class="project-search-controls">
                     <input id="experience-title-search" name="title" type="search" value="{{ title_query }}" placeholder="Try: RISTEK" autocomplete="off">
+                    <label class="sr-only" for="experience-category-search">Filter by category</label>
+                    <select id="experience-category-search" aria-label="Filter by category">
+                        <option value="">All categories</option>
+                        {% for key, label in experience_categories %}<option value="{{ key }}" {% if category_query == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                    </select>
                     <button class="button button-primary" type="submit">Search</button>
-                    {% if title_query %}
-                        <a class="button button-ghost" href="{% url 'main:show_experience' %}">Clear</a>
-                    {% endif %}
+                    <button id="clear-experience-search" class="button button-ghost" type="button" {% if not title_query %}hidden{% endif %}>Clear</button>
                 </div>
             </form>
-            <ol class="timeline-list">
-                {% for experience in experience_list %}
-                    <li class="timeline-item">
-                        <article>
-                            <div class="timeline-marker" aria-hidden="true"><span></span></div>
-                            <div class="timeline-meta">
-                                <p>{{ experience.get_category_display }}</p>
-                                {% if experience.is_ongoing %}
-                                    <span class="status-chip status-live"><i></i> Sedang berlangsung</span>
-                                {% else %}
-                                    <span class="status-chip">Selesai</span>
-                                {% endif %}
-                            </div>
-                            <div class="timeline-content">
-                                <h3>{{ experience.title }}</h3>
-                                <p>{{ experience.description }}</p>
-                                <div class="timeline-actions">
-                                    {% include 'components/experience_star.html' with experience=experience %}
-                                    {% if user.is_superuser or is_editor %}
-                                        <a class="button button-ghost" href="{% url 'main:update_experience' experience.id %}">Edit</a>
-                                    {% endif %}
-                                    {% if user.is_superuser %}
-                                        <button class="button button-danger" type="button" data-delete-dialog="delete-experience-{{ experience.id }}">Delete</button>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </article>
-                        {% if user.is_superuser %}
-                            {% include 'components/experience_delete_modal.html' %}
-                        {% endif %}
-                    </li>
-                {% empty %}
-                    <li class="empty-state">
-                        <span aria-hidden="true">[ ]</span>
-                        {% if title_query %}
-                            <p>Tidak ada pengalaman dengan judul "{{ title_query }}".</p>
-                        {% else %}
-                            <p>Belum ada pengalaman yang ditambahkan.</p>
-                        {% endif %}
-                    </li>
-                {% endfor %}
-            </ol>
+            <div id="experience-loading" class="empty-state" role="status">Memuat pengalaman...</div>
+            <div id="experience-error" class="empty-state hide" role="alert">Gagal memuat pengalaman. <button id="retry-experiences" class="button button-ghost" type="button">Coba lagi</button></div>
+            <div id="experience-empty" class="empty-state hide" role="status">Belum ada pengalaman yang ditambahkan atau ditemukan.</div>
+            <ol id="experience-list" class="timeline-list hide" aria-live="polite"></ol>
         </div>
     </section>
+    <form class="hide" aria-hidden="true">{% csrf_token %}</form>
+    {% if user.is_superuser %}{% include 'components/experience_form_modal.html' %}{% endif %}
+    <div id="experience-config" hidden
+        data-api-url="{% url 'main:get_experiences_json' %}"
+        data-star-url="{% url 'main:toggle_experience_star' '00000000-0000-0000-0000-000000000000' %}"
+        data-edit-url="{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}"
+        data-delete-url="{% url 'main:delete_experience' '00000000-0000-0000-0000-000000000000' %}"
+        data-create-url="{% url 'main:create_experience_ajax' %}"
+        data-is-superuser="{{ user.is_superuser|yesno:'true,false' }}"
+        data-can-edit="{% if user.is_superuser or is_editor %}true{% else %}false{% endif %}"
+        data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"></div>
+    {% load static %}
+    <script src="{% static 'js/experience.js' %}" defer></script>
 {% endblock %}
