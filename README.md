@@ -166,3 +166,25 @@ Untuk mencoba secara lokal, jalankan `py manage.py runserver`, buka `/experience
 #### Penggunaan AI
 
 Aku pake Codex untuk bantu membaca checklist Tugas 5, menerapkan pola AJAX dari Tutorial 5 ke Experience, menulis pengujian hak akses dan validasi, serta mengecek hasil implementasi. Aku menentukan Experience sebagai bagian yang dilanjutkan dari Tugas 3–4, mempertahankan pembagian peran dan desain pixel-game yang sudah dipilih sebelumnya, dan meminta perubahan dikerjakan bertahap. Log prompting dan revisinya tersedia di task Codex yang aku pakai selama pengerjaan. Hasil kode tetap perlu aku cek lagi di browser lokal sebelum dikumpulkan.
+
+### Tutorial 7
+
+API baru menggunakan Django REST Framework tanpa mengubah model atau data lama. `ProjectSerializer` dan `ExperienceSerializer` menentukan field yang boleh dibaca dan ditulis, membersihkan input teks, serta menghitung status star berdasarkan akun yang sedang membuka API. API view terpisah dari view halaman HTML dan tersedia di `/api/v1/projects/` serta `/api/v1/experiences/`, masing-masing dengan route detail UUID dan `/star/`. Halaman Projects dan Experience kini mengambil data dari API tersebut; pencarian, modal tambah, toast, dan tampilan pixel-game tetap digunakan.
+
+GET daftar dan detail dapat diakses semua orang. POST, PUT, PATCH, dan DELETE Project hanya untuk superuser; star untuk akun login. Pada Experience, Editor juga boleh PUT/PATCH, sedangkan tambah dan hapus tetap khusus superuser. Perubahan data melalui session memerlukan token CSRF. Endpoint JSON lama tetap ada agar integrasi sebelumnya tidak rusak.
+
+Untuk menjalankan dan menguji:
+
+```powershell
+env\Scripts\activate
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+python manage.py test main
+```
+
+Buka `/api/v1/projects/` atau `/api/v1/experiences/` untuk melihat Browsable API. Tambahkan `?format=json` untuk JSON mentah. Test API ada di `main/tests_api.py` dan mencakup CRUD, pencarian, validasi, hak akses, CSRF, serta star.
+
+#### Penggunaan AI
+
+Aku memakai Codex untuk membantu membaca langkah Tutorial 7, menyesuaikan serializer dan API dengan field portofolioku, memindahkan halaman AJAX ke respons DRF, menyusun test, dan memeriksa tampilan lokal. Aku memilih untuk mempertahankan Projects dan Experience beserta desain dan pembagian peran yang sudah dibuat pada tugas sebelumnya. Aku akan melakukan QA akhir sebelum push dan pengumpulan sendiri.
