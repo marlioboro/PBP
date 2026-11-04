@@ -54,11 +54,13 @@
     <form class="hide" aria-hidden="true">{% csrf_token %}</form>
     {% if user.is_superuser %}{% include 'components/project_form_modal.html' %}{% endif %}
     <div id="project-config" hidden
-        data-api-url="{% url 'main:get_projects_json' %}"
+        data-api-url="{% url 'api:project-list' %}"
         data-detail-url="{% url 'main:show_project_detail' 'project-placeholder' %}"
-        data-star-url="{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}"
-        data-delete-url="{% url 'main:delete_project' '00000000-0000-0000-0000-000000000000' %}"
-        data-create-url="{% url 'main:create_project_ajax' %}"
+        data-star-url="{% url 'api:project-star' '00000000-0000-0000-0000-000000000000' %}"
+        data-delete-url="{% url 'api:project-detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-create-url="{% url 'api:project-list' %}"
+        data-login-url="{% url 'main:login' %}"
+        data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
         data-is-superuser="{{ user.is_superuser|yesno:'true,false' }}"></div>
     {% load static %}
     <script src="{% static 'js/projects.js' %}" defer></script>

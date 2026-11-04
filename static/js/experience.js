@@ -37,7 +37,7 @@
     }
 
     function buildExperience(item) {
-        const data = item.fields;
+        const data = item;
         const row = element('li', 'timeline-item');
         const article = document.createElement('article');
         const marker = element('div', 'timeline-marker');
@@ -45,7 +45,7 @@
         marker.append(document.createElement('span'));
 
         const meta = element('div', 'timeline-meta');
-        meta.append(element('p', '', data.category));
+        meta.append(element('p', '', data.category_display));
         const status = element('span', `status-chip${data.is_ongoing ? ' status-live' : ''}`, data.is_ongoing ? 'Sedang berlangsung' : 'Selesai');
         if (data.is_ongoing) status.prepend(document.createElement('i'));
         meta.append(status);
@@ -54,26 +54,33 @@
         content.append(element('h3', '', data.title), element('p', '', data.description));
         const actions = element('div', 'timeline-actions');
 
-        const star = postForm(actionUrl(config.starUrl, item.pk), 'star-form');
-        const starButton = element('button', `button button-star${data.is_starred ? ' is-starred' : ''}`);
-        starButton.type = 'submit';
-        starButton.title = data.star_count ? `Starred by ${data.starred_by_names}` : 'Be the first to star this experience';
-        const icon = element('span', '', '★ ');
-        icon.setAttribute('aria-hidden', 'true');
-        starButton.append(icon, element('span', 'star-label', data.is_starred ? 'Unstar' : 'Star'), element('span', 'star-count', String(data.star_count)));
-        star.append(starButton);
-        actions.append(star);
+        if (config.isAuthenticated === 'true') {
+            const star = postForm(actionUrl(config.starUrl, item.id), 'star-form');
+            const starButton = element('button', `button button-star${data.is_starred ? ' is-starred' : ''}`);
+            starButton.type = 'submit';
+            starButton.title = data.star_count ? `Starred by ${data.starred_by_names}` : 'Be the first to star this experience';
+            const icon = element('span', '', '★ ');
+            icon.setAttribute('aria-hidden', 'true');
+            starButton.append(icon, element('span', 'star-label', data.is_starred ? 'Unstar' : 'Star'), element('span', 'star-count', String(data.star_count)));
+            star.append(starButton);
+            actions.append(star);
+        } else {
+            const login = element('a', 'button button-star', `★ Star ${data.star_count}`);
+            login.href = `${config.loginUrl}?next=${encodeURIComponent(window.location.pathname)}`;
+            login.title = 'Log in to star this experience';
+            actions.append(login);
+        }
 
         if (config.canEdit === 'true') {
             const edit = element('a', 'button button-ghost', 'Edit');
-            edit.href = actionUrl(config.editUrl, item.pk);
+            edit.href = actionUrl(config.editUrl, item.id);
             actions.append(edit);
         }
 
         if (config.isSuperuser === 'true') {
             const deleteButton = element('button', 'button button-danger', 'Delete');
             deleteButton.type = 'button';
-            deleteButton.dataset.deleteDialog = `delete-experience-${item.pk}`;
+            deleteButton.dataset.deleteDialog = `delete-experience-${item.id}`;
             actions.append(deleteButton);
 
             const dialog = element('dialog', 'project-delete-modal');
@@ -86,7 +93,7 @@
             const cancelButton = element('button', 'button button-ghost', 'Cancel');
             cancelButton.type = 'submit';
             cancel.append(cancelButton);
-            const deletion = postForm(actionUrl(config.deleteUrl, item.pk), '');
+            const deletion = postForm(actionUrl(config.deleteUrl, item.id), 'api-delete-form');
             const confirm = element('button', 'button button-danger', 'Yes, delete');
             confirm.type = 'submit';
             deletion.append(confirm);
@@ -155,26 +162,35 @@
     document.getElementById('retry-experiences').addEventListener('click', fetchExperiences);
 
     list.addEventListener('submit', async (event) => {
-        const starForm = event.target;
-        if (!starForm.matches('.star-form') || config.isAuthenticated !== 'true') return;
+        const actionForm = event.target;
+        if (!actionForm.matches('.star-form, .api-delete-form')) return;
         event.preventDefault();
-        const button = starForm.querySelector('button');
+        const deleting = actionForm.matches('.api-delete-form');
+        const button = actionForm.querySelector('button');
         button.disabled = true;
         try {
-            const response = await fetch(starForm.action, {
-                method: 'POST',
+            const response = await fetch(actionForm.action, {
+                method: deleting ? 'DELETE' : 'POST',
                 headers: { 'X-CSRFToken': csrfToken, Accept: 'application/json' },
-                body: new FormData(starForm),
             });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            if (!response.ok) {
+                const failure = await response.json().catch(() => ({}));
+                throw new Error(failure.detail || `HTTP ${response.status}`);
+            }
+            if (deleting) {
+                actionForm.closest('dialog').close();
+                showToast('Berhasil', 'Pengalaman berhasil dihapus.', 'success');
+                fetchExperiences();
+                return;
+            }
             const result = await response.json();
             button.classList.toggle('is-starred', result.is_starred);
             button.querySelector('.star-label').textContent = result.is_starred ? 'Unstar' : 'Star';
             button.querySelector('.star-count').textContent = result.star_count;
             button.title = result.star_count ? `Starred by ${result.starred_by_names}` : 'Be the first to star this experience';
         } catch (failure) {
-            console.error('Unable to update star:', failure);
-            showToast('Gagal memberi star', 'Silakan coba lagi.', 'error');
+            console.error('Unable to update experience:', failure);
+            showToast('Permintaan gagal', failure.message, 'error');
         } finally {
             button.disabled = false;
         }
@@ -186,23 +202,22 @@
             const submit = form.querySelector('[type="submit"]');
             submit.disabled = true;
             form.querySelectorAll('[data-error-for]').forEach((node) => { node.textContent = ''; });
+            const data = Object.fromEntries(new FormData(form).entries());
+            delete data.csrfmiddlewaretoken;
+            data.ended_at = data.ended_at || null;
             try {
                 const response = await fetch(config.createUrl, {
                     method: 'POST',
-                    headers: { 'X-CSRFToken': csrfToken, Accept: 'application/json' },
-                    body: new FormData(form),
+                    headers: { 'X-CSRFToken': csrfToken, Accept: 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
                 });
                 const result = await response.json().catch(() => ({}));
                 if (!response.ok) {
-                    if (result.errors) {
-                        form.querySelectorAll('[data-error-for]').forEach((node) => {
-                            const fieldErrors = result.errors[node.dataset.errorFor] || [];
-                            node.textContent = fieldErrors.map((item) => item.message).join(' ');
-                        });
-                    }
-                    const message = result.errors
-                        ? Object.values(result.errors).flat().map((item) => item.message).join(' ')
-                        : result.message || `HTTP ${response.status}`;
+                    form.querySelectorAll('[data-error-for]').forEach((node) => {
+                        node.textContent = (result[node.dataset.errorFor] || []).join(' ');
+                    });
+                    const message = Object.values(result).filter(Array.isArray).flat().join(' ')
+                        || result.detail || `HTTP ${response.status}`;
                     showToast('Gagal menambah pengalaman', message, 'error');
                     return;
                 }

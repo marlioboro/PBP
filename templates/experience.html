@@ -45,11 +45,12 @@
     <form class="hide" aria-hidden="true">{% csrf_token %}</form>
     {% if user.is_superuser %}{% include 'components/experience_form_modal.html' %}{% endif %}
     <div id="experience-config" hidden
-        data-api-url="{% url 'main:get_experiences_json' %}"
-        data-star-url="{% url 'main:toggle_experience_star' '00000000-0000-0000-0000-000000000000' %}"
+        data-api-url="{% url 'api:experience-list' %}"
+        data-star-url="{% url 'api:experience-star' '00000000-0000-0000-0000-000000000000' %}"
         data-edit-url="{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}"
-        data-delete-url="{% url 'main:delete_experience' '00000000-0000-0000-0000-000000000000' %}"
-        data-create-url="{% url 'main:create_experience_ajax' %}"
+        data-delete-url="{% url 'api:experience-detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-create-url="{% url 'api:experience-list' %}"
+        data-login-url="{% url 'main:login' %}"
         data-is-superuser="{{ user.is_superuser|yesno:'true,false' }}"
         data-can-edit="{% if user.is_superuser or is_editor %}true{% else %}false{% endif %}"
         data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"></div>
