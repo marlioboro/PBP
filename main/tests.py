@@ -54,7 +54,7 @@ class MainTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'experience.html')
         self.assertContains(response, 'id="experience-list"')
-        self.assertContains(response, reverse('main:get_experiences_json'))
+        self.assertContains(response, reverse('api:experience-list'))
         self.assertNotContains(response, self.experience.description)
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
 
@@ -516,7 +516,7 @@ class ProjectTest(TestCase):
         response = self.client.get(reverse('main:show_projects'))
 
         self.assertContains(response, 'id="project-grid"')
-        self.assertContains(response, reverse('main:get_projects_json'))
+        self.assertContains(response, reverse('api:project-list'))
         self.assertNotContains(response, self.project.summary)
 
         data = self.client.get(reverse('main:get_projects_json')).json()
@@ -662,7 +662,7 @@ class ProjectTest(TestCase):
         self.assertContains(response, 'id="project-form"')
         self.assertContains(
             response,
-            reverse('main:delete_project', args=['00000000-0000-0000-0000-000000000000']),
+            reverse('api:project-detail', args=['00000000-0000-0000-0000-000000000000']),
         )
 
     def test_delete_requires_superuser_and_post(self):
