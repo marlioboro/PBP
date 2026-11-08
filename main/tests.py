@@ -306,7 +306,8 @@ class ExperiencePermissionTest(TestCase):
         self.client.force_login(self.editor)
         editor_response = self.client.get(list_url)
         self.assertNotContains(editor_response, '+ Add experience')
-        self.assertNotContains(editor_response, 'id="experience-form"')
+        # Tugas 6: Editor memakai modal yang sama untuk PATCH ke API.
+        self.assertContains(editor_response, 'id="experience-form"')
         self.assertContains(editor_response, 'data-can-edit="true"')
         self.assertContains(editor_response, 'data-is-superuser="false"')
 
