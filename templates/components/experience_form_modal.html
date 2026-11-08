@@ -1,9 +1,9 @@
-<div id="add-experience-modal" class="project-form-modal" popover="auto" role="dialog" aria-labelledby="add-experience-modal-title">
-    <button class="project-form-modal-backdrop" type="button" popovertarget="add-experience-modal" popovertargetaction="hide" aria-label="Close add experience form"></button>
+<div id="experience-form-modal" class="project-form-modal" popover="auto" role="dialog" aria-labelledby="experience-form-modal-title">
+    <button class="project-form-modal-backdrop" type="button" popovertarget="experience-form-modal" popovertargetaction="hide" aria-label="Close experience form"></button>
     <div class="project-form-modal-content">
-        <button class="project-form-modal-close" type="button" popovertarget="add-experience-modal" popovertargetaction="hide" aria-label="Close add experience form">×</button>
-        <p class="section-label">// NEW_JOURNEY</p>
-        <h2 id="add-experience-modal-title">Add experience</h2>
+        <button class="project-form-modal-close" type="button" popovertarget="experience-form-modal" popovertargetaction="hide" aria-label="Close experience form">×</button>
+        <p id="experience-form-modal-label" class="section-label">// NEW_JOURNEY</p>
+        <h2 id="experience-form-modal-title">Add experience</h2>
         <form id="experience-form" class="project-form" method="post" action="{% url 'main:create_experience' %}">
             {% csrf_token %}
             {% for field in form %}
@@ -15,8 +15,8 @@
                 </div>
             {% endfor %}
             <div class="form-actions">
-                <button class="button button-primary" type="submit">Save experience</button>
-                <button class="button button-ghost" type="button" popovertarget="add-experience-modal" popovertargetaction="hide">Cancel</button>
+                <button id="experience-form-submit" class="button button-primary" type="submit">Save experience</button>
+                <button class="button button-ghost" type="button" popovertarget="experience-form-modal" popovertargetaction="hide">Cancel</button>
             </div>
         </form>
     </div>

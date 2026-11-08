@@ -20,7 +20,7 @@
             <div class="archive-heading">
                 <h2 id="experience-list-heading">Experience list</h2>
                 {% if user.is_superuser %}
-                    <button class="button button-ghost" type="button" popovertarget="add-experience-modal">+ Add experience</button>
+                    <button id="open-add-experience" class="button button-ghost" type="button" popovertarget="experience-form-modal">+ Add experience</button>
                 {% endif %}
             </div>
             <form id="experience-search-form" class="project-search" role="search">
@@ -43,12 +43,11 @@
         </div>
     </section>
     <form class="hide" aria-hidden="true">{% csrf_token %}</form>
-    {% if user.is_superuser %}{% include 'components/experience_form_modal.html' %}{% endif %}
+    {% if user.is_superuser or is_editor %}{% include 'components/experience_form_modal.html' %}{% endif %}
     <div id="experience-config" hidden
         data-api-url="{% url 'api:experience-list' %}"
         data-star-url="{% url 'api:experience-star' '00000000-0000-0000-0000-000000000000' %}"
-        data-edit-url="{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}"
-        data-delete-url="{% url 'api:experience-detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-detail-url="{% url 'api:experience-detail' '00000000-0000-0000-0000-000000000000' %}"
         data-create-url="{% url 'api:experience-list' %}"
         data-login-url="{% url 'main:login' %}"
         data-is-superuser="{{ user.is_superuser|yesno:'true,false' }}"

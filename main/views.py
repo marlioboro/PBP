@@ -88,7 +88,7 @@ def show_experience(request):
         active_page='experience',
         title_query=request.GET.get('title', '').strip(),
         is_editor=is_editor(request.user),
-        form=ExperienceForm() if request.user.is_superuser else None,
+        form=ExperienceForm() if can_update_portfolio(request.user) else None,
         experience_categories=Experience.EXPERIENCE_CHOICES,
         category_query=request.GET.get('category', '').strip(),
     )

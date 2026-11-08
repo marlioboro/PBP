@@ -8,10 +8,13 @@
     const category = document.getElementById('experience-category-search');
     const clear = document.getElementById('clear-experience-search');
     const form = document.getElementById('experience-form');
+    const formModal = document.getElementById('experience-form-modal');
     const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
     const uuidMarker = '00000000-0000-0000-0000-000000000000';
+    const experiencesById = new Map();
     let controller;
     let debounceTimer;
+    let editingId = null;
 
     function element(tag, className, value) {
         const node = document.createElement(tag);
@@ -72,8 +75,9 @@
         }
 
         if (config.canEdit === 'true') {
-            const edit = element('a', 'button button-ghost', 'Edit');
-            edit.href = actionUrl(config.editUrl, item.id);
+            const edit = element('button', 'button button-ghost experience-edit', 'Edit');
+            edit.type = 'button';
+            edit.dataset.experienceId = item.id;
             actions.append(edit);
         }
 
@@ -93,7 +97,7 @@
             const cancelButton = element('button', 'button button-ghost', 'Cancel');
             cancelButton.type = 'submit';
             cancel.append(cancelButton);
-            const deletion = postForm(actionUrl(config.deleteUrl, item.id), 'api-delete-form');
+            const deletion = postForm(actionUrl(config.detailUrl, item.id), 'api-delete-form');
             const confirm = element('button', 'button button-danger', 'Yes, delete');
             confirm.type = 'submit';
             deletion.append(confirm);
@@ -107,6 +111,34 @@
         article.append(marker, meta, content);
         row.prepend(article);
         return row;
+    }
+
+    // DRF mengirim {"detail": "..."} untuk 401/403/404 dan {"field": ["..."]} untuk 400.
+    function apiErrorMessage(result, status) {
+        if (result.detail) return result.detail;
+        const messages = Object.entries(result)
+            .filter(([, value]) => Array.isArray(value))
+            .map(([field, value]) => (field === 'non_field_errors' ? value.join(' ') : `${field}: ${value.join(' ')}`));
+        return messages.join(' ') || `HTTP ${status}`;
+    }
+
+    // Input datetime-local tidak menerima zona waktu; server memakai UTC.
+    function toDateTimeLocal(value) {
+        return value ? new Date(value).toISOString().slice(0, 16) : '';
+    }
+
+    function setFormMode(experience) {
+        editingId = experience ? experience.id : null;
+        form.reset();
+        form.querySelectorAll('[data-error-for]').forEach((node) => { node.textContent = ''; });
+        document.getElementById('experience-form-modal-label').textContent = experience ? '// EDIT_JOURNEY' : '// NEW_JOURNEY';
+        document.getElementById('experience-form-modal-title').textContent = experience ? 'Edit experience' : 'Add experience';
+        document.getElementById('experience-form-submit').textContent = experience ? 'Update experience' : 'Save experience';
+        if (!experience) return;
+        for (const name of ['title', 'description', 'category', 'thumbnail']) {
+            if (form.elements[name]) form.elements[name].value = experience[name] ?? '';
+        }
+        if (form.elements.ended_at) form.elements.ended_at.value = toDateTimeLocal(experience.ended_at);
     }
 
     function showState(current) {
@@ -130,6 +162,8 @@
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const records = await response.json();
             if (controller !== requestController) return;
+            experiencesById.clear();
+            records.forEach((record) => experiencesById.set(record.id, record));
             list.replaceChildren(...records.map(buildExperience));
             showState(records.length ? 'list' : 'empty');
         } catch (failure) {
@@ -161,6 +195,18 @@
     });
     document.getElementById('retry-experiences').addEventListener('click', fetchExperiences);
 
+    list.addEventListener('click', (event) => {
+        const editButton = event.target.closest('.experience-edit');
+        if (!editButton || !form) return;
+        const experience = experiencesById.get(editButton.dataset.experienceId);
+        if (!experience) return;
+        setFormMode(experience);
+        formModal.showPopover();
+        form.elements.title?.focus();
+    });
+
+    document.getElementById('open-add-experience')?.addEventListener('click', () => setFormMode(null));
+
     list.addEventListener('submit', async (event) => {
         const actionForm = event.target;
         if (!actionForm.matches('.star-form, .api-delete-form')) return;
@@ -175,7 +221,7 @@
             });
             if (!response.ok) {
                 const failure = await response.json().catch(() => ({}));
-                throw new Error(failure.detail || `HTTP ${response.status}`);
+                throw new Error(apiErrorMessage(failure, response.status));
             }
             if (deleting) {
                 actionForm.closest('dialog').close();
@@ -205,9 +251,12 @@
             const data = Object.fromEntries(new FormData(form).entries());
             delete data.csrfmiddlewaretoken;
             data.ended_at = data.ended_at || null;
+            const editing = Boolean(editingId);
+            const failTitle = editing ? 'Gagal mengubah pengalaman' : 'Gagal menambah pengalaman';
             try {
-                const response = await fetch(config.createUrl, {
-                    method: 'POST',
+                // Tambah: POST ke endpoint daftar. Edit: PATCH ke endpoint detail.
+                const response = await fetch(editing ? actionUrl(config.detailUrl, editingId) : config.createUrl, {
+                    method: editing ? 'PATCH' : 'POST',
                     headers: { 'X-CSRFToken': csrfToken, Accept: 'application/json', 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
                 });
@@ -216,18 +265,16 @@
                     form.querySelectorAll('[data-error-for]').forEach((node) => {
                         node.textContent = (result[node.dataset.errorFor] || []).join(' ');
                     });
-                    const message = Object.values(result).filter(Array.isArray).flat().join(' ')
-                        || result.detail || `HTTP ${response.status}`;
-                    showToast('Gagal menambah pengalaman', message, 'error');
+                    showToast(failTitle, apiErrorMessage(result, response.status), 'error');
                     return;
                 }
-                form.reset();
-                document.getElementById('add-experience-modal').hidePopover();
-                showToast('Berhasil', 'Pengalaman baru berhasil ditambahkan!', 'success');
+                setFormMode(null);
+                formModal.hidePopover();
+                showToast('Berhasil', editing ? 'Pengalaman berhasil diperbarui.' : 'Pengalaman baru berhasil ditambahkan!', 'success');
                 fetchExperiences();
             } catch (failure) {
-                console.error('Unable to add experience:', failure);
-                showToast('Gagal menambah pengalaman', 'Tidak dapat terhubung ke server.', 'error');
+                console.error('Unable to save experience:', failure);
+                showToast(failTitle, 'Tidak dapat terhubung ke server.', 'error');
             } finally {
                 submit.disabled = false;
             }
