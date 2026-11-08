@@ -188,3 +188,96 @@ Buka `/api/v1/projects/` atau `/api/v1/experiences/` untuk melihat Browsable API
 #### Penggunaan AI
 
 Aku memakai Codex untuk membantu membaca langkah Tutorial 7, menyesuaikan serializer dan API dengan field portofolioku, memindahkan halaman AJAX ke respons DRF, menyusun test, dan memeriksa tampilan lokal. Aku memilih untuk mempertahankan Projects dan Experience beserta desain dan pembagian peran yang sudah dibuat pada tugas sebelumnya. Aku akan melakukan QA akhir sebelum push dan pengumpulan sendiri.
+
+### Tugas 6
+
+Pada Tugas 6, pola DRF dari Tutorial 7 diterapkan ke bagian **Experience**, yaitu bagian yang aku kerjakan sendiri sejak Tugas 3. Model dan data lama tetap dipakai, jadi tidak ada migration baru.
+
+| Komponen | Implementasi |
+| --- | --- |
+| Serializer | `ExperienceSerializer` di `main/serializers.py` memakai `fields` eksplisit. `star_count`, `is_starred`, dan `starred_by_names` adalah `SerializerMethodField` yang read-only. `validate_title` dan `validate_description` membersihkan input dengan `strip_tags` dan menolak teks yang isinya cuma tag. |
+| Permission | `IsPortfolioOwnerOrEditorOrReadOnly` di `main/permissions.py` dipakai untuk daftar dan detail. Endpoint star memakai `IsAuthenticated`, dan akun pemberi star selalu diambil dari `request.user`. |
+| API view | `experience_list` (GET, POST), `experience_detail` (GET, PUT, PATCH, DELETE), dan `experience_star` (POST) di `main/api_views.py` memakai `@api_view` dan `SessionAuthentication`. |
+| URL | `/api/v1/experiences/`, `/api/v1/experiences/<uuid>/`, dan `/api/v1/experiences/<uuid>/star/` dengan nama `api:experience-list`, `api:experience-detail`, dan `api:experience-star`. |
+| Pencarian | Parameter query `?title=` dan `?category=` pada endpoint daftar. |
+| Halaman | `/experience/` menampilkan, mencari, menambah, mengedit, memberi star, dan menghapus data lewat `fetch()` tanpa reload. Modal yang sama dipakai untuk tambah (POST) dan edit (PATCH). Pesan 400 dan 403 dari API muncul di toast. |
+
+Status HTTP yang dikembalikan: `201` saat data dibuat, `400` untuk input tidak valid, `403` untuk aksi yang tidak diizinkan atau tanpa token CSRF, `404` untuk UUID yang tidak ada, dan `204` setelah data dihapus.
+
+Hak akses API Experience mengikuti peran dari Tugas 4:
+
+| Peran | GET | Star | PUT/PATCH | POST/DELETE |
+| --- | --- | --- | --- | --- |
+| Pengunjung | Ya | Tidak (403) | Tidak (403) | Tidak (403) |
+| Pengguna biasa | Ya | Ya | Tidak (403) | Tidak (403) |
+| Editor | Ya | Ya | Ya | Tidak (403) |
+| Superuser | Ya | Ya | Ya | Ya |
+
+View halaman lama dari Tugas 3–4 sudah sesuai aturan ini: tambah dan hapus hanya untuk superuser, edit untuk Editor dan superuser. Yang berubah hanya `show_experience`, yang sekarang juga mengirim form ke Editor supaya modal edit bisa dipakai.
+
+#### Menjalankan dan menguji Tugas 6
+
+```powershell
+env\Scripts\activate
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+python manage.py test main
+```
+
+Buka `/api/v1/experiences/` untuk melihat Browsable API, atau tambahkan `?format=json` untuk JSON mentah. Untuk mencoba setiap peran di halaman `/experience/`:
+
+1. Login sebagai superuser untuk mencoba tambah, edit, dan hapus.
+2. Tambahkan sebuah akun ke group `Editor` lewat Django Admin, lalu login dengan akun itu. Tombol Edit muncul, tetapi tombol tambah dan hapus tidak.
+3. Login sebagai pengguna biasa untuk mencoba star.
+
+Test Tugas 6 ada di `main/tests_experience_api.py` dan memakai `APITestCase`. Cakupannya:
+- penolakan menulis untuk pengunjung dan pengguna biasa, dengan pengecekan isi database;
+- Editor bisa PATCH/PUT tetapi ditolak saat POST dan DELETE;
+- pemilik bisa membuat, mengubah, dan menghapus data;
+- validasi input, termasuk `strip_tags`, kategori, dan URL tidak valid;
+- star, termasuk penolakan untuk pengunjung;
+- test `APIClient(enforce_csrf_checks=True)` dengan `.login()` yang membuktikan permintaan tanpa token CSRF ditolak.
+
+1. **REST dan PUT vs PATCH**
+
+   REST (Representational State Transfer) adalah gaya arsitektur untuk API web. Data dipandang sebagai *resource* dengan alamat yang jelas, misalnya `/api/v1/experiences/<uuid>/`. Aksi terhadap resource itu dinyatakan lewat method HTTP: GET untuk membaca, POST untuk membuat, PUT/PATCH untuk mengubah, dan DELETE untuk menghapus. Hasilnya dikomunikasikan lewat status code, misalnya 201, 400, 403, 404, dan 204. Server juga *stateless*: setiap request membawa semua yang dibutuhkan untuk diproses.
+
+   Mengembalikan JSON saja belum cukup untuk disebut RESTful. Endpoint seperti `/experience/add-ajax/` atau `/delete-experience?id=...` yang selalu mengembalikan JSON dengan status 200 tetap menaruh aksi di URL dan tidak memakai makna method maupun status code HTTP. JSON hanyalah format representasinya, sedangkan REST adalah soal desain resource, method, dan status.
+
+   PUT mengganti seluruh representasi resource, jadi semua field wajib harus dikirim. PATCH hanya mengubah field yang dikirim. Contohnya, PUT cocok untuk form edit yang mengirim ulang semua isian Experience. PATCH cocok kalau aku cuma mau mengisi `ended_at` saat sebuah kepanitiaan selesai, atau mengganti kategori tanpa mengirim ulang judul dan deskripsi. Modal edit di halaman Experience memakai PATCH, dan test juga memastikan PUT dengan data lengkap bekerja untuk Editor.
+
+2. **Peran serializer di DRF**
+
+   Serializer adalah penghubung dua arah antara objek model dan data JSON. Ke arah luar, serializer mengubah objek `Experience` menjadi dictionary yang siap dikirim, termasuk field turunan seperti `category_display`, `star_count`, dan `is_starred`. Ke arah dalam, serializer memvalidasi input dari client, misalnya tipe data, pilihan `category`, format URL `thumbnail`, dan `validate_<field>` untuk `strip_tags`, lalu menyimpan data lewat `save()`.
+
+   Di Tutorial 5, aku merakit dictionary secara manual dan mengembalikannya dengan `JsonResponse`. Validasi input harus ditulis terpisah lewat form atau kode sendiri. Dengan serializer, satu kelas dipakai ulang untuk list, detail, create, dan update. Field yang boleh ditulis dan yang read-only dideklarasikan di satu tempat, dan error validasi otomatis keluar dalam format `{field: [pesan]}` dengan status 400. Serializer juga terhubung dengan Browsable API. Hasilnya, kode lebih sedikit, konsisten, dan lebih kecil kemungkinan ada field sensitif yang ikut terkirim tanpa sengaja.
+
+3. **Autentikasi vs otorisasi**
+
+   Autentikasi menjawab pertanyaan "siapa yang mengirim request ini?". Di proyek ini `SessionAuthentication` membaca cookie session Django dan mengisi `request.user`. Otorisasi menjawab pertanyaan "apakah akun ini boleh melakukan aksi ini?". Itu dicek oleh permission class seperti `IsPortfolioOwnerOrEditorOrReadOnly` dan `IsAuthenticated`. Kalau autentikasi gagal, user dianggap anonim. Kalau otorisasi gagal, DRF mengembalikan 403 dan view tidak dijalankan.
+
+   Menyembunyikan tombol di template hanya mengatur tampilan. Siapa pun tetap bisa mengirim `DELETE /api/v1/experiences/<uuid>/` lewat `fetch()` di console browser, `curl`, atau Postman tanpa pernah melihat tombolnya. Karena itu aturan akses harus dicek di server, satu-satunya tempat yang tidak bisa diubah oleh client. Test di `tests_experience_api.py` membuktikan hal ini dengan mengirim request langsung sebagai setiap peran, lalu memeriksa bahwa database tidak berubah.
+
+4. **CSRF pada SessionAuthentication dan keterbatasan `force_authenticate`**
+
+   Dengan `SessionAuthentication`, browser otomatis menyertakan cookie session ke setiap request ke domain ini, termasuk request yang dipicu dari situs lain. Tanpa token CSRF, halaman jahat bisa membuat browser pengguna yang sedang login mengirim POST atau DELETE ke API ini, dan server akan menganggapnya sah. Token CSRF adalah nilai rahasia yang hanya bisa dibaca oleh halaman di domain ini (dari cookie `csrftoken`) lalu dikirim di header `X-CSRFToken`. Karena itu setiap `fetch()` yang mengubah data di `experience.js` menyertakan header tersebut, dan DRF menolak request tanpa token dengan 403.
+
+   `force_authenticate` langsung menempelkan user ke request dan melewati proses autentikasi session. Akibatnya, pengecekan CSRF yang dilakukan `SessionAuthentication` juga ikut terlewati. Test dengan `force_authenticate` hanya membuktikan permission class benar, bukan bahwa perlindungan CSRF aktif. Untuk membuktikan CSRF, test harus memakai `APIClient(enforce_csrf_checks=True)` dan `.login()` supaya ada session sungguhan. Lalu dicek bahwa request tanpa token ditolak 403 dan data tidak berubah, sedangkan request dengan token dari cookie `csrftoken` berhasil.
+
+#### Penggunaan AI
+
+Untuk Tugas 6 aku memakai Claude sebagai pendamping. Claude membaca checklist Tugas 6, mengaudit kode Experience dari branch Tutorial 7 terhadap checklist itu, lalu menunjukkan bagian yang belum terpenuhi. Hasil auditnya: serializer, permission, dan endpoint Experience sudah ada sejak Tutorial 7. Yang belum ada adalah cara mengedit lewat PUT/PATCH dari halaman (tombol Edit masih membuka halaman form lama) dan test `APITestCase` khusus Experience yang lengkap untuk setiap peran.
+
+Bagian yang dibantu AI:
+- mengubah modal tambah menjadi modal tambah/edit yang mengirim PATCH ke API;
+- menampilkan pesan error 400/403 dari DRF di toast;
+- menulis `main/tests_experience_api.py`;
+- menyusun draf jawaban pertanyaan reflektif.
+
+Strategi promptingku adalah meminta audit dulu sebelum menulis kode, lalu mengerjakan celahnya satu per satu, dan menjalankan seluruh test setelah setiap perubahan.
+
+Catatan keterbatasan dan koreksi manual:
+- Satu test lama dari Tugas 5 (`test_action_controls_match_each_role`) gagal karena masih mengharapkan Editor tidak menerima form. Aturannya memang berubah di Tugas 6 (Editor butuh modal edit), jadi aku memilih menyesuaikan test-nya, bukan menghapusnya.
+- Input `datetime-local` tidak membawa zona waktu, sementara server memakai UTC. Nilai `ended_at` saat edit diisi dalam UTC supaya tidak bergeser 7 jam ketika disimpan ulang. Ini perlu aku cek manual di browser.
+- AI tidak bisa membuka halaman lokal di browser-ku, jadi QA tampilan modal edit, toast, dan alur tiap peran aku lakukan sendiri sebelum push dan pengumpulan.
