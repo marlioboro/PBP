@@ -241,7 +241,7 @@ Test Tugas 6 ada di `main/tests_experience_api.py` dan memakai `APITestCase`. Ca
 
 1. **Apa itu REST, kenapa JSON aja belum cukup, dan bedanya PUT sama PATCH**
 
-   REST itu gaya ngerancang API di mana data dianggap sebagai *resource* yang punya alamat sendiri. Contohnya, satu pengalaman di portofolioku alamatnya `/api/v1/experiences/<uuid>/`. Mau ngapain sama resource itu ditentuin lewat method HTTP: GET buat baca, POST buat bikin, PUT/PATCH buat ubah, DELETE buat hapus. Hasilnya dikasih tau lewat status code, misalnya 201 kalau berhasil dibuat, 400 kalau input salah, 403 kalau nggak boleh, 404 kalau nggak ketemu, dan 204 kalau udah dihapus.
+   REST itu gaya ngerancang API di mana data dianggap sebagai resource yang punya alamat sendiri. Contohnya, satu pengalaman di portofolioku alamatnya `/api/v1/experiences/<uuid>/`. Mau ngapain sama resource itu ditentuin lewat method HTTP: GET buat baca, POST buat bikin, PUT/PATCH buat ubah, DELETE buat hapus. Hasilnya dikasih tau lewat status code, misalnya 201 kalau berhasil dibuat, 400 kalau input salah, 403 kalau nggak boleh, 404 kalau nggak ketemu, dan 204 kalau udah dihapus.
 
    Jadi API yang balikin JSON belum tentu RESTful. Contohnya endpoint lama aku di Tugas 5, `/experience/add-ajax/`. Aksinya ditulis di URL, bukan lewat method, dan bentuknya beda-beda tiap fitur. Kalau ada API yang semua responsnya status 200 padahal gagal, itu juga bukan REST walaupun isinya JSON. JSON cuma format datanya, sedangkan REST itu soal cara ngatur resource, method, dan status-nya.
 
